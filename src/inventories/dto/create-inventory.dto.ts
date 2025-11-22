@@ -1,36 +1,33 @@
-import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsInt,
-  IsNumberString,
-  Min,
-  IsOptional,
-  IsBoolean,
-} from 'class-validator';
+import { IsDateString, IsBoolean, IsInt, Min, IsPositive } from 'class-validator';
 
 export class CreateInventoryDto {
-  @IsNumberString()
-  hotel_id: string;
+  @IsInt()
+  @Min(1)
+  hotelId: number;
 
-  @IsNumberString()
-  room_type_id: string;
+  @IsInt()
+  @Min(1)
+  roomTypeId: number;
 
   @IsDateString()
-  date: string;
+  inventoryDate: string;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(0)
-  allotment?: number = 0;
+  totalRooms: number;
 
-  @IsOptional()
-  @Type(() => Number)
   @IsInt()
   @Min(0)
-  sold?: number = 0;
+  availableRooms: number;
 
-  @IsOptional()
+  @IsInt()
+  @Min(0)
+  blockedRooms: number;
+
+  @IsInt()
+  @Min(0)
+  roomsSold: number;
+
   @IsBoolean()
-  stop_sell?: boolean = false;
+  stopSell: boolean;
 }

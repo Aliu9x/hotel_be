@@ -23,83 +23,81 @@ export class HotelPoliciesService {
     private readonly hotelMemberService: HotelMembersService,
   ) {}
 
-  async demo(user: IUser) {
-    console.log('user trong service:', user);
-  }
-
-  async create(dto: CreateHotelPolicyDto, user: IUser) {
+  async createOrUpdate(dto: CreateHotelPolicyDto, user: IUser) {
     if (!(user.role === Role.ADMIN || user.role === Role.HOTEL_OWNER)) {
       throw new ForbiddenException(
-        'Bạn không có quyền tạo chính sách hiển thị',
+        'Bạn không có quyền thao tác với chính sách khách sạn',
       );
     }
 
     const hotelId = user.role === Role.ADMIN ? dto.hotel_id : user.hotel_id;
-    if (!hotelId) throw new BadRequestException('Thiếu hotel_id');
+    if (!hotelId) {
+      throw new BadRequestException('Thiếu hotel_id');
+    }
 
-    this.hotelMemberService.checkRole(hotelId, user);
+    await this.hotelMemberService.checkRole(hotelId, user);
 
     const hotel = await this.hotelsRepo.findOne({ where: { id: hotelId } });
-    if (!hotel) throw new NotFoundException('Không tìm thấy khách sạn');
+    if (!hotel) {
+      throw new NotFoundException('Không tìm thấy khách sạn');
+    }
 
     const existed = await this.hotelPolicyRepo.findOne({
       where: { hotel_id: hotelId },
     });
-    if (existed)
-      throw new BadRequestException('Khách sạn đã có chính sách hiển thị');
 
-    const entity = this.hotelPolicyRepo.create({
-      hotel_id: hotelId,
-      default_checkin_time: dto.default_checkin_time ?? null,
-      default_checkout_time: dto.default_checkout_time ?? null,
-      house_rules: dto.house_rules ?? null,
-      children_policy: dto.children_policy ?? null,
-      smoking_policy: dto.smoking_policy ?? null,
-      pets_policy: dto.pets_policy ?? null,
-      other_policies: dto.other_policies ?? null,
+    if (existed) {
+      existed.default_checkin_time =
+        dto.default_checkin_time ?? existed.default_checkin_time;
+      existed.default_checkout_time =
+        dto.default_checkout_time ?? existed.default_checkout_time;
+      existed.house_rules = dto.house_rules ?? existed.house_rules;
+      existed.children_policy = dto.children_policy ?? existed.children_policy;
+      existed.smoking_policy = dto.smoking_policy ?? existed.smoking_policy;
+      existed.pets_policy = dto.pets_policy ?? existed.pets_policy;
+      existed.other_policies = dto.other_policies ?? existed.other_policies;
+
+      return await this.hotelPolicyRepo.save(existed);
+    } else {
+      const entity = this.hotelPolicyRepo.create({
+        hotel_id: hotelId,
+        default_checkin_time: dto.default_checkin_time ?? null,
+        default_checkout_time: dto.default_checkout_time ?? null,
+        house_rules: dto.house_rules ?? null,
+        children_policy: dto.children_policy ?? null,
+        smoking_policy: dto.smoking_policy ?? null,
+        pets_policy: dto.pets_policy ?? null,
+        other_policies: dto.other_policies ?? null,
+      });
+
+      return await this.hotelPolicyRepo.save(entity);
+    }
+  }
+
+  async findOne( user: IUser,hotelId?: string,): Promise<HotelPolicy> {
+    const targetHotelId =
+      user.role === Role.HOTEL_OWNER ? user.hotel_id : hotelId;
+
+    if (!targetHotelId) {
+      throw new BadRequestException('Thiếu hotelId để lấy chính sách.');
+    }
+
+    if (user.role === Role.HOTEL_OWNER && user.hotel_id !== targetHotelId) {
+      throw new ForbiddenException(
+        'Không có quyền truy cập chính sách khách sạn này.',
+      );
+    }
+
+    const policy = await this.hotelPolicyRepo.findOne({
+      where: { hotel_id: targetHotelId },
     });
 
-    return this.hotelPolicyRepo.save(entity);
-  }
-
-  async findAll(user: IUser, query?: { hotel_id?: string }) {
-    if (user.role === Role.ADMIN) {
-      const where: FindOptionsWhere<HotelPolicy> = {};
-      if (query?.hotel_id) where.hotel_id = query.hotel_id;
-      return this.hotelPolicyRepo.find({
-        where,
-        order: { updated_at: 'DESC' },
-      });
+    if (!policy) {
+      throw new NotFoundException(
+        'Chưa thiết lập chính sách cho khách sạn này.',
+      );
     }
-    if (user.role === Role.HOTEL_OWNER) {
-      if (!user.hotel_id)
-        throw new ForbiddenException('Không xác định được khách sạn của bạn');
-      return this.hotelPolicyRepo.find({
-        where: { hotel_id: user.hotel_id },
-        order: { updated_at: 'DESC' },
-      });
-    }
-  }
 
-  async findOne(id: string, user: IUser) {
-    const policy = await this.hotelPolicyRepo.findOne({ where: { id } });
-    if (!policy)
-      throw new NotFoundException('Không tìm thấy chính sách hiển thị');
-    if (user.role === Role.HOTEL_OWNER && user.hotel_id === policy.hotel_id) {
-      return policy;
-    }
-  }
-
-  async update(id: string, dto: UpdateHotelPolicyDto, user: IUser) {
-    const policy = await this.hotelPolicyRepo.findOne({ where: { id } });
-    if (!policy)
-      throw new NotFoundException('Không tìm thấy chính sách hiển thị');
-
-    if (user.role === Role.HOTEL_OWNER && user.hotel_id === policy.hotel_id) {
-      (dto as any).hotel_id && delete (dto as any).hotel_id;
-
-      const merged = this.hotelPolicyRepo.merge(policy, dto);
-      return this.hotelPolicyRepo.save(merged);
-    }
+    return policy;
   }
 }

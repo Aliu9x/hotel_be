@@ -1,4 +1,27 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateInventoryDto } from './create-inventory.dto';
+import { IsOptional, IsInt, Min, IsBoolean } from 'class-validator';
 
-export class UpdateInventoryDto extends PartialType(CreateInventoryDto) {}
+export class UpdateInventoryDto {
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  totalRooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  availableRooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  blockedRooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  roomsSold?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  stopSell?: boolean;
+}

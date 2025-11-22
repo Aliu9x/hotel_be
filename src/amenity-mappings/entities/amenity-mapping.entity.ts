@@ -1,59 +1,45 @@
-import { Amenity } from 'src/amenity/entities/amenity.entity';
+import { Amenity } from 'src/amenity-category/entities/amenity.entity';
+import { RoomType } from 'src/room-types/entities/room-type.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Unique,
+  Index,
 } from 'typeorm';
 
-export enum AmenityEntityType {
-  Hotel = 'Hotel',
-  RoomType = 'RoomType',
-}
-
 @Entity({ name: 'amenity_mappings' })
-@Index('idx_am_entity', [ 'entity_id'])
-@Index('idx_am_amenity', ['amenity_id'])
-@Index('uq_am_entity_amenity', ['entity_id', 'amenity_id'], {
-  unique: true,
-})
+@Unique('uq_mapping', ['hotel_id', 'room_type_id', 'amenity_id'])
+@Index('idx_hotel', ['hotel_id'])
+@Index('idx_room_type', ['room_type_id'])
 export class AmenityMapping {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', name: 'hotel_id' })
   hotel_id: string;
 
-  @Column({ type: 'bigint' })
-  entity_id: string;
-
-  @Column({
-    type: 'enum',
-    enum: AmenityEntityType,
-    enumName: 'amenity_entity_type',
-  })
-  entity_type: AmenityEntityType;
+  @Column({ type: 'bigint', name: 'room_type_id', nullable: true })
+  room_type_id?: string | null;
 
   @Column({ type: 'bigint', name: 'amenity_id' })
   amenity_id: string;
 
-  @ManyToOne(() => Amenity, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Amenity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'amenity_id' })
-  amenity?: Amenity;
+  amenity: Amenity;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  value?: string | null;
+  @ManyToOne(() => RoomType, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'room_type_id' })
+  room_type?: RoomType;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  notes?: string | null;
-
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updatedAt' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
 }

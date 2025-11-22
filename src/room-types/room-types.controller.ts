@@ -12,9 +12,9 @@ import { RoomTypesService } from './room-types.service';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { RoomType } from './entities/room-type.entity';
 import { ListRoomTypesDto } from './dto/list-room-types.dto';
-import { Public, Roles, User } from 'src/decorator/customize';
+import { Public, User } from 'src/decorator/customize';
+import { RoomType } from './entities/room-type.entity';
 
 @ApiTags('room-types')
 @Controller('room-types')
@@ -49,5 +49,10 @@ export class RoomTypesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.removeHard(id);
+  }
+
+  @Get('load-images/:id')
+  loadImage(@Param('id') id: string, @User() user) {
+    return this.service.loadImagesFileNames(id, user);
   }
 }

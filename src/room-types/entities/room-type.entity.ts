@@ -1,28 +1,19 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
   PrimaryColumn,
-  BeforeInsert,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ulid } from 'ulid';
 
 @Entity({ name: 'room_types' })
 @Index('idx_room_types_hotel_active', ['hotel_id', 'is_active'])
 @Index('idx_room_types_name', ['name'])
 export class RoomType {
-  @PrimaryColumn('varchar', { length: 26 })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
-
-  @BeforeInsert()
-  generateId() {
-    if (!this.id) {
-      this.id = ulid().slice(-10);
-    }
-  }
 
   @Column({ type: 'bigint' })
   hotel_id: string;
@@ -32,9 +23,6 @@ export class RoomType {
 
   @Column({ type: 'text', nullable: true })
   description?: string | null;
-
-  @Column({ type: 'decimal', precision: 6, scale: 2, nullable: true })
-  area_sqm?: string | null; // decimal(6,2) → string
 
   @Column({ type: 'int', nullable: true })
   total_rooms?: number | null;
@@ -47,7 +35,7 @@ export class RoomType {
 
   @Column({ type: 'int' })
   max_occupancy: number;
-  
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   bed_config?: string | null;
 
@@ -57,18 +45,18 @@ export class RoomType {
   @Column({ type: 'varchar', length: 50, nullable: true })
   floor_level?: string | null;
 
-  @Column({ type: 'boolean', default: () => 'FALSE' })
+  @Column({ type: 'boolean', default: false })
   smoking_allowed: boolean;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   view?: string | null;
 
-  @Column({ type: 'boolean', default: () => 'TRUE' })
+  @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updatedAt' })
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updated_at: Date;
 }

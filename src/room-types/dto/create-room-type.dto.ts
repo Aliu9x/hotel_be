@@ -11,8 +11,8 @@ import {
   Min,
 } from 'class-validator';
 
-export class CreateRoomTypeDto {
 
+export class CreateRoomTypeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
@@ -71,4 +71,5 @@ export class CreateRoomTypeDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean = true;
+
 }

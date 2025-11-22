@@ -15,9 +15,6 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   @Length(1, 100)
-  @Matches(/^[A-Za-z0-9_\-\.]+$/, {
-    message: 'username chỉ cho phép chữ, số, ., -, _',
-  })
   username: string;
 
   @IsOptional()
@@ -49,9 +46,6 @@ export class RegisterUserDTo {
   @IsString()
   @IsNotEmpty()
   @Length(1, 100)
-  @Matches(/^[A-Za-z0-9_\-\.]+$/, {
-    message: 'username chỉ cho phép chữ, số, ., -, _',
-  })
   username: string;
 
   @IsOptional()

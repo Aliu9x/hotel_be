@@ -11,7 +11,6 @@ import { RolesGuard } from './guards/roles.guard';
 import { HotelsModule } from './hotels/hotels.module';
 import { UsersModule } from './users/users.module';
 import { HotelMembersModule } from './hotel-members/hotel-members.module';
-import { AmenityModule } from './amenity/amenity.module';
 import { RoomTypesModule } from './room-types/room-types.module';
 import { HotelPoliciesModule } from './hotel-policies/hotel-policies.module';
 import { HotelModulesModule } from './hotel-modules/hotel-modules.module';
@@ -19,11 +18,13 @@ import { HotelModuleSubscriptionsModule } from './hotel-module-subscriptions/hot
 import { FilesModule } from './files/files.module';
 import { AmenityMappingsModule } from './amenity-mappings/amenity-mappings.module';
 import { InventoriesModule } from './inventories/inventories.module';
-import { TemporaryLocksModule } from './temporary-locks/temporary-locks.module';
 import { CancellationPoliciesModule } from './cancellation-policies/cancellation-policies.module';
 import { CancellationPolicyRulesModule } from './cancellation-policy-rules/cancellation-policy-rules.module';
 import { RatePlansModule } from './rate-plans/rate-plans.module';
 import { PricesModule } from './prices/prices.module';
+import { AmenityCategoryModule } from './amenity-category/amenity-category.module';
+import { LocationsModule } from './locations/locations.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -50,7 +51,6 @@ import { PricesModule } from './prices/prices.module';
     HotelsModule,
     UsersModule,
     HotelMembersModule,
-    AmenityModule,
     RoomTypesModule,
     HotelPoliciesModule,
     HotelModulesModule,
@@ -58,11 +58,13 @@ import { PricesModule } from './prices/prices.module';
     FilesModule,
     AmenityMappingsModule,
     InventoriesModule,
-    TemporaryLocksModule,
     CancellationPoliciesModule,
     CancellationPolicyRulesModule,
     RatePlansModule,
     PricesModule,
+    AmenityCategoryModule,
+    LocationsModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,25 +1,23 @@
+// src/hotel/dto/create-hotel.dto.ts
+
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsBoolean,
-  IsEmail,
-  IsIn,
+  IsString,
   IsNotEmpty,
   IsOptional,
-  IsString,
-  Length,
-  Matches,
+  IsEmail,
+  IsEnum,
   MaxLength,
+  MinLength,
+  Min,
+  Max,
+  IsInt,
+  IsNumberString,
 } from 'class-validator';
 import { HotelApprovalStatus } from '../entities/hotel.entity';
 
 export class CreateHotelDto {
   @IsString()
-  @IsNotEmpty()
-  @Length(1, 50)
-  code: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
   name: string;
 
   @IsOptional()
@@ -28,49 +26,55 @@ export class CreateHotelDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(50)
+  @IsNumberString()
   phone?: string;
 
   @IsOptional()
   @IsEmail()
-  @MaxLength(255)
   email?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(255)
   address_line?: string;
 
+  // IDs thay vì text nhập tay
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  ward?: string;
+  @IsInt()
+  province_id?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  district?: string;
+  @IsInt()
+  district_id?: number;
 
   @IsOptional()
+  @IsInt()
+  ward_id?: number;
+
+  // Nếu vẫn cho nhập city riêng (không bắt buộc)
+  @IsOptional()
   @IsString()
-  @MaxLength(100)
   city?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  province?: string;
+  country_code?: string;
 
   @IsOptional()
   @IsString()
-  @Length(2, 2)
-  @Matches(/^[A-Z]{2}$/, { message: 'country_code phải là ISO-3166-1 alpha-2' })
-  country_code?: string = 'VN';
+  timezone?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  timezone?: string = 'Asia/Ho_Chi_Minh';
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  star_rating?: number;
 
-
+  @ApiPropertyOptional({
+    example: HotelApprovalStatus.PENDING,
+    enum: HotelApprovalStatus,
+    default: HotelApprovalStatus.PENDING,
+  })
+  @IsOptional()
+  @IsEnum(HotelApprovalStatus)
+  approval_status?: HotelApprovalStatus;
 }

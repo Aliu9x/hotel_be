@@ -1,18 +1,62 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
-import { RoomType } from './entities/room-type.entity';
 import { ListRoomTypesDto } from './dto/list-room-types.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IUser } from 'src/interfaces/customize.interface';
+import { RoomTypeImage } from './entities/room-type-image.entity';
+import { Hotel } from 'src/hotels/entities/hotel.entity';
+import { Inventory } from 'src/inventories/entities/inventory.entity';
+import { RoomType } from './entities/room-type.entity';
 
 @Injectable()
 export class RoomTypesService {
   constructor(
     @InjectRepository(RoomType)
     private readonly repo: Repository<RoomType>,
+    @InjectRepository(RoomTypeImage)
+    private readonly repoRt: Repository<RoomTypeImage>,
+    @InjectRepository(Hotel)
+    private readonly repoHt: Repository<Hotel>,
+    @InjectRepository(Inventory)
+    private readonly repoInventory: Repository<Inventory>,
   ) {}
+
+  async loadImagesFileNames(
+    roomTypeId: string,
+    user: IUser,
+  ): Promise<{ thumbnail: string | null; slider: string[] }> {
+    const hotel = await this.repoHt.findOne({ where: { id: user.hotel_id } });
+    if (!hotel) {
+      throw new NotFoundException('Hotel not found for current user');
+    }
+    const roomType = await this.repo.findOne({
+      where: { id: roomTypeId, hotel_id: hotel.id },
+    });
+    if (!roomType) {
+      throw new NotFoundException(
+        'Room type not found or not belongs to your hotel',
+      );
+    }
+    const rows = await this.repoRt.find({
+      where: { room_type_id: roomTypeId },
+      order: { id: 'ASC' },
+    });
+    if (rows.length === 0) {
+      return { thumbnail: null, slider: [] };
+    }
+
+    let cover = rows.find((r) => r.is_cover === true) ?? null;
+    const coverId = cover?.id ?? null;
+    const gallery = rows.filter((r) => r.id !== coverId);
+
+    return {
+      thumbnail: cover ? cover.file_name : null,
+      slider: gallery.map((g) => g.file_name),
+    };
+  }
+
   async create(dto: CreateRoomTypeDto, user: IUser) {
     const entity = this.repo.create({
       hotel_id: user.hotel_id,
@@ -29,8 +73,36 @@ export class RoomTypesService {
       view: dto.view ?? null,
       is_active: dto.is_active ?? true,
     });
+
     const saved = await this.repo.save(entity);
-    return { data: saved };
+
+    const inventories = [];
+    const today = new Date();
+
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+
+      inventories.push({
+        hotelId: user.hotel_id,
+        roomTypeId: saved.id,
+        inventoryDate: d.toISOString().slice(0, 10),
+        totalRooms: dto.total_rooms ?? 0,
+        availableRooms: dto.total_rooms ?? 0,
+        blockedRooms: 0,
+        roomsSold: 0,
+        stopSell: false,
+      });
+    }
+
+    await this.repoInventory.insert(inventories);
+
+    return JSON.parse(
+      JSON.stringify({
+        ...saved,
+        inventories_created: inventories.length,
+      }),
+    );
   }
 
   async findAll(query: ListRoomTypesDto) {

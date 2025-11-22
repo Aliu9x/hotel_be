@@ -1,45 +1,41 @@
-import { RoomType } from 'src/room-types/entities/room-type.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
   CreateDateColumn,
 } from 'typeorm';
 
 @Entity({ name: 'inventories' })
-@Index('idx_inventories_hotel_room_date', ['hotel_id', 'room_type_id', 'date'])
 export class Inventory {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  @Column({ type: 'bigint' })
-  hotel_id: string;
+  @Column({ type: 'bigint', name: 'hotel_id' })
+  hotelId: string;
 
-  @Column({ type: 'bigint' })
-  room_type_id: string;
+  @Column({ type: 'bigint', name: 'room_type_id' })
+  roomTypeId: string;
 
-  @ManyToOne(() => RoomType, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'room_type_id' })
-  room_type?: RoomType;
+  @Column({ type: 'date', name: 'inventory_date' })
+  inventoryDate: string; 
 
-  // store local date (no time)
-  @Column({ type: 'date' })
-  date: string;
+  @Column({ type: 'int', name: 'total_rooms', default: 0 })
+  totalRooms: number;
 
-  @Column({ type: 'int', default: () => '0' })
-  allotment: number;
+  @Column({ type: 'int', name: 'available_rooms', default: 0 })
+  availableRooms: number;
 
-  @Column({ type: 'int', default: () => '0' })
-  sold: number;
+  @Column({ type: 'int', name: 'blocked_rooms', default: 0 })
+  blockedRooms: number;
 
-  @Column({ type: 'boolean', default: () => 'FALSE' })
-  stop_sell: boolean;
+  @Column({ type: 'int', name: 'rooms_sold', default: 0 })
+  roomsSold: number;
 
- @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @Column({ type: 'tinyint', name: 'stop_sell', width: 1, default: 0 })
+  stopSell: boolean;
+
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updatedAt' })
