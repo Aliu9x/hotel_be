@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { District } from './district.entity';
 
 @Entity({ name: 'provinces' })
@@ -34,6 +42,6 @@ export class Province {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => District, d => d.province)
+  @OneToMany(() => District, (d) => d.province)
   districts: District[];
 }

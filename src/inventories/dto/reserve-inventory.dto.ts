@@ -13,14 +13,13 @@ export class ReserveInventoryDto {
   roomTypeId: number;
 
   @IsDateString()
-  fromDate: string; // checkin date inclusive
+  fromDate: string; 
 
   @IsDateString()
-  toDate: string; // checkout date exclusive
+  toDate: string; 
 
   @IsInt()
   @Min(1)
   quantity: number;
 
-  // Có thể thêm bookingId / customerId nếu muốn ghi audit (bỏ qua ở đây)
 }

@@ -21,10 +21,11 @@ import { InventoriesModule } from './inventories/inventories.module';
 import { CancellationPoliciesModule } from './cancellation-policies/cancellation-policies.module';
 import { CancellationPolicyRulesModule } from './cancellation-policy-rules/cancellation-policy-rules.module';
 import { RatePlansModule } from './rate-plans/rate-plans.module';
-import { PricesModule } from './prices/prices.module';
 import { AmenityCategoryModule } from './amenity-category/amenity-category.module';
 import { LocationsModule } from './locations/locations.module';
 import { CronModule } from './cron/cron.module';
+import { SearchModule } from './search/search.module';
+import { BookingsModule } from './bookings/bookings.module';
 
 @Module({
   imports: [
@@ -61,10 +62,11 @@ import { CronModule } from './cron/cron.module';
     CancellationPoliciesModule,
     CancellationPolicyRulesModule,
     RatePlansModule,
-    PricesModule,
     AmenityCategoryModule,
     LocationsModule,
     CronModule,
+    SearchModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [

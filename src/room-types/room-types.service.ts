@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
 import { ListRoomTypesDto } from './dto/list-room-types.dto';
@@ -9,6 +13,7 @@ import { RoomTypeImage } from './entities/room-type-image.entity';
 import { Hotel } from 'src/hotels/entities/hotel.entity';
 import { Inventory } from 'src/inventories/entities/inventory.entity';
 import { RoomType } from './entities/room-type.entity';
+import { log } from 'console';
 
 @Injectable()
 export class RoomTypesService {
@@ -105,7 +110,7 @@ export class RoomTypesService {
     );
   }
 
-  async findAll(query: ListRoomTypesDto) {
+  async findAll(query: ListRoomTypesDto, user: IUser) {
     const {
       q,
       view,
@@ -128,6 +133,11 @@ export class RoomTypesService {
       String(order).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     const qb = this.repo.createQueryBuilder('rt');
+    if (!user.hotel_id) {
+      throw new ForbiddenException('Bạn không thuộc khách sạn nào');
+    }
+
+    qb.andWhere('rt.hotel_id = :hotel_id', { hotel_id: user.hotel_id });
 
     if (q && q.trim()) {
       qb.andWhere('LOWER(rt.name) ILIKE :kw', {

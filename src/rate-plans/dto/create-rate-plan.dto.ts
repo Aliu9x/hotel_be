@@ -1,83 +1,67 @@
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEnum,
   IsInt,
-  IsNumber,
-  IsNumberString,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  MaxLength,
+  Max,
   Min,
-  ValidateIf,
 } from 'class-validator';
 import { MealPlanType, RatePlanType } from '../entities/rate-plan.entity';
 
 export class CreateRatePlanDto {
-  @IsNumberString()
-  hotel_id: string;
-
-  @IsNumberString()
+  @ApiProperty({ description: 'Room Type ID', example: '10' })
+  @IsString()
+  @IsNotEmpty()
   room_type_id: string;
 
+  @ApiProperty({ example: 'Flexible' })
   @IsString()
-  @MaxLength(160)
+  @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ example: '1200000.00' })
+  @IsString()
+  @IsNotEmpty()
+  price_amount: string;
+
+  @ApiPropertyOptional({ example: 'Bao gồm bữa sáng, hủy miễn phí trước 24h' })
   @IsOptional()
   @IsString()
-  description?: string | null;
+  description?: string;
 
+  @ApiPropertyOptional({ enum: MealPlanType, example: MealPlanType.BREAKFAST })
   @IsOptional()
   @IsEnum(MealPlanType)
-  meal_plan?: MealPlanType | null;
+  meal_plan?: MealPlanType;
 
+  @ApiProperty({ enum: RatePlanType, example: RatePlanType.REFUNDABLE })
   @IsEnum(RatePlanType)
   type: RatePlanType;
 
-  @Type(() => Number)
+  @ApiProperty({ example: 2, default: 2 })
   @IsInt()
   @Min(1)
+  @Max(10)
   base_occupancy: number;
 
-  @Type(() => Number)
+  @ApiProperty({ example: 3 })
   @IsInt()
   @Min(1)
+  @Max(10)
   max_occupancy: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  extra_adult_fee?: number = 0;
+  @ApiProperty({ example: '0.00' })
+  @IsString()
+  extra_adult_fee: string;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  extra_child_fee?: number = 0;
+  @ApiProperty({ example: '0.00' })
+  @IsString()
+  extra_child_fee: string;
 
-  @IsOptional()
-  @IsNumberString()
-  cancellation_policy_id?: string | null;
-
-  @IsOptional()
+  @ApiProperty({ example: false })
   @IsBoolean()
-  prepayment_required?: boolean = false;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  min_los?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  max_los?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  is_active?: boolean;
+  prepayment_required: boolean;
 }

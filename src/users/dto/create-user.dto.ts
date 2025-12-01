@@ -43,15 +43,15 @@ export class CreateUserDto {
   hotelId?: string;
 }
 export class RegisterUserDTo {
-  @IsString()
-  @IsNotEmpty()
-  @Length(1, 100)
-  username: string;
+  // @IsString()
+  // @IsNotEmpty()
+  // @Length(1, 100)
+  // username: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  full_name: string;
+  fullName: string;
 
   @IsOptional()
   @IsEmail()

@@ -71,7 +71,6 @@ export class UsersService {
     }
 
     const user = this.userRepo.create({
-      username: dto.username,
       full_name: dto.full_name,
       email: dto.email ?? null,
       phone: dto.phone ?? null,
@@ -108,8 +107,7 @@ export class UsersService {
       }
     }
     const user = this.userRepo.create({
-      username: dto.username,
-      full_name: dto.full_name,
+      full_name: dto.fullName,
       email: dto.email,
       phone: dto.phone,
       password: dto.password,

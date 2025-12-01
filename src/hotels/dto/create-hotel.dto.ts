@@ -1,43 +1,30 @@
-// src/hotel/dto/create-hotel.dto.ts
-
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEmail,
-  IsEnum,
-  MaxLength,
-  MinLength,
-  Min,
-  Max,
-  IsInt,
-  IsNumberString,
-} from 'class-validator';
-import { HotelApprovalStatus } from '../entities/hotel.entity';
+import { IsInt, IsOptional, IsString, IsIn, IsEmail } from 'class-validator';
 
 export class CreateHotelDto {
+  // Registration meta
   @IsString()
-  name: string;
+  registration_code!: string; // numeric-only from FE
+
+  @IsIn(['PENDING', 'APPROVED'])
+  approval_status!: 'PENDING' | 'APPROVED';
+
+  // Basic info
+  @IsString()
+  name!: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsOptional()
-  @IsString()
-  @IsNumberString()
-  phone?: string;
+  @IsInt()
+  star_rating?: number;
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
+  // Address (no country_code, no timezone)
   @IsOptional()
   @IsString()
   address_line?: string;
 
-  // IDs thay vì text nhập tay
   @IsOptional()
   @IsInt()
   province_id?: number;
@@ -50,31 +37,16 @@ export class CreateHotelDto {
   @IsInt()
   ward_id?: number;
 
-  // Nếu vẫn cho nhập city riêng (không bắt buộc)
+  // Contact (overview)
   @IsOptional()
   @IsString()
-  city?: string;
+  contact_name?: string;
+
+  @IsOptional()
+  @IsEmail()
+  contact_email?: string;
 
   @IsOptional()
   @IsString()
-  country_code?: string;
-
-  @IsOptional()
-  @IsString()
-  timezone?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(5)
-  star_rating?: number;
-
-  @ApiPropertyOptional({
-    example: HotelApprovalStatus.PENDING,
-    enum: HotelApprovalStatus,
-    default: HotelApprovalStatus.PENDING,
-  })
-  @IsOptional()
-  @IsEnum(HotelApprovalStatus)
-  approval_status?: HotelApprovalStatus;
+  contact_phone?: string;
 }

@@ -27,9 +27,8 @@ export class RoomTypesController {
   }
 
   @Get()
-  @Public()
-  findAll(@Query() query: ListRoomTypesDto) {
-    return this.service.findAll(query);
+  findAll(@Query() query: ListRoomTypesDto, @User() user) {
+    return this.service.findAll(query, user);
   }
 
   @Get(':id')

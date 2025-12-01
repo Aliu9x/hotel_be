@@ -28,14 +28,11 @@ export class User {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  username: string;
-
   @Column()
   password: string;
 
-  @Column({ type: 'varchar', length: 255, })
-  full_name?: string | null;
+  @Column({ type: 'varchar', length: 255 })
+  full_name: string | null;
 
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   email?: string | null;
@@ -82,7 +79,4 @@ export class User {
 
   @OneToMany(() => Hotel, (hotel) => hotel.created_by_user)
   created_hotels: Hotel[];
-
-
-  
 }

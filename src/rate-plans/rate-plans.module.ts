@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
-import { RatePlansService } from './rate-plans.service';
-import { RatePlansController } from './rate-plans.controller';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RatePlan } from './entities/rate-plan.entity';
 import { RoomType } from 'src/room-types/entities/room-type.entity';
 import { CancellationPolicy } from 'src/cancellation-policies/entities/cancellation-policy.entity';
+import { RatePlanController } from './rate-plans.controller';
+import { RatePlanService } from './rate-plans.service';
 
 @Module({
-imports: [TypeOrmModule.forFeature([RatePlan, RoomType, CancellationPolicy])],
-  controllers: [RatePlansController],
-  providers: [RatePlansService],
-  exports: [RatePlansService],
+  imports: [TypeOrmModule.forFeature([RatePlan, RoomType, CancellationPolicy])],
+  controllers: [RatePlanController],
+  providers: [RatePlanService],
+  exports: [RatePlanService],
 })
 export class RatePlansModule {}

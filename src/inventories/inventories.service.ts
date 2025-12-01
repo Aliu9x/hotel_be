@@ -81,7 +81,6 @@ export class InventoriesService {
     const inv = await this.repo.findOne({ where: { id } });
     if (!inv) throw new InventoryException(InventoryErrorCode.NOT_FOUND, 'Inventory not found', { id });
 
-    // Delta adjustments
     if (dto.deltaTotalRooms !== undefined) inv.totalRooms += dto.deltaTotalRooms;
     if (dto.deltaAvailableRooms !== undefined) inv.availableRooms += dto.deltaAvailableRooms;
     if (dto.deltaBlockedRooms !== undefined) inv.blockedRooms += dto.deltaBlockedRooms;

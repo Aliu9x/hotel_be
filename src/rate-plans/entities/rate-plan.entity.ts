@@ -1,16 +1,15 @@
-import { CancellationPolicy } from 'src/cancellation-policies/entities/cancellation-policy.entity';
+import { Hotel } from 'src/hotels/entities/hotel.entity';
 import { RoomType } from 'src/room-types/entities/room-type.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
-  ManyToOne,
   JoinColumn,
 } from 'typeorm';
-
 
 export enum MealPlanType {
   NONE = 'NONE',
@@ -25,45 +24,43 @@ export enum RatePlanType {
   SEMI_FLEX = 'SEMI_FLEX',
 }
 
-@Entity({ name: 'rate_plans' })
-@Index('idx_rate_plans_hotel_room_active', ['hotel_id', 'room_type_id', 'is_active'])
+@Entity('rate_plans')
+@Index('idx_rate_plans_hotel_room_type', ['hotel_id', 'room_type_id'])
 export class RatePlan {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', name: 'hotel_id' })
   hotel_id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', name: 'room_type_id' })
   room_type_id: string;
-
-  @ManyToOne(() => RoomType, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'room_type_id' })
-  room_type?: RoomType;
 
   @Column({ type: 'varchar', length: 160 })
   name: string;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'price_amount' })
+  price_amount: string; 
+
   @Column({ type: 'text', nullable: true })
-  description?: string | null;
+  description?: string;
 
   @Column({
     type: 'enum',
     enum: MealPlanType,
-    enumName: 'meal_plan_type',
+    name: 'meal_plan',
     nullable: true,
   })
-  meal_plan?: MealPlanType | null;
+  meal_plan?: MealPlanType;
 
   @Column({
     type: 'enum',
     enum: RatePlanType,
-    enumName: 'rate_plan_type',
     name: 'type',
   })
   type: RatePlanType;
 
-  @Column({ type: 'int', name: 'base_occupancy', default: () => '2' })
+  @Column({ type: 'int', name: 'base_occupancy', default: 2 })
   base_occupancy: number;
 
   @Column({ type: 'int', name: 'max_occupancy' })
@@ -74,34 +71,25 @@ export class RatePlan {
     precision: 12,
     scale: 2,
     name: 'extra_adult_fee',
-    default: () => '0.00',
+    default: 0,
   })
-  extra_adult_fee: string; // store as string for precision
+  extra_adult_fee: string;
 
   @Column({
     type: 'decimal',
     precision: 12,
     scale: 2,
     name: 'extra_child_fee',
-    default: () => '0.00',
+    default: 0,
   })
-  extra_child_fee: string; // store as string for precision
+  extra_child_fee: string;
 
-  @Column({ type: 'bigint', nullable: true, name: 'cancellation_policy_id' })
-  cancellation_policy_id?: string | null;
-
-  @ManyToOne(() => CancellationPolicy, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'cancellation_policy_id' })
-  cancellation_policy?: CancellationPolicy | null;
-
-  @Column({ type: 'boolean', name: 'prepayment_required', default: () => 'FALSE' })
+  @Column({
+    type: 'boolean',
+    name: 'prepayment_required',
+    default: false,
+  })
   prepayment_required: boolean;
-
-  @Column({ type: 'int', name: 'min_los', nullable: true })
-  min_los?: number | null;
-
-  @Column({ type: 'int', name: 'max_los', nullable: true })
-  max_los?: number | null;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;
@@ -109,6 +97,11 @@ export class RatePlan {
   @UpdateDateColumn({ type: 'timestamp', name: 'updatedAt' })
   updated_at: Date;
 
-  @Column({ type: 'boolean', name: 'is_active', default: () => 'TRUE' })
-  is_active: boolean;
+  @ManyToOne(() => Hotel, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'hotel_id' })
+  hotel: Hotel;
+
+  @ManyToOne(() => RoomType, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'room_type_id' })
+  roomType: RoomType;
 }

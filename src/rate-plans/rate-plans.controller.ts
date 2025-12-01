@@ -1,41 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { RatePlansService } from './rate-plans.service';
-import { CreateRatePlanDto } from './dto/create-rate-plan.dto';
-import { UpdateRatePlanDto } from './dto/update-rate-plan.dto';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ValidationPipe } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ListRatePlansDto } from './dto/list-rate-plans.dto';
-import { RatePlan } from './entities/rate-plan.entity';
+import { UpdateRatePlanDto } from './dto/update-rate-plan.dto';
+import { RatePlanService } from './rate-plans.service';
+import { IUser } from 'src/interfaces/customize.interface';
+import { User } from 'src/decorator/customize';
+import { CreateRatePlanDto } from './dto/create-rate-plan.dto';
 
+@ApiTags('Rate Plans')
 @Controller('rate-plans')
-export class RatePlansController {
- constructor(private readonly service: RatePlansService) {}
-
-  @Post()
-  create(@Body() dto: CreateRatePlanDto): Promise<RatePlan> {
-    return this.service.create(dto);
-  }
+export class RatePlanController {
+  constructor(private readonly service: RatePlanService) {}
 
   @Get()
-  findAll(@Query() query: ListRatePlansDto) {
-    return this.service.findAll(query);
+  @ApiOperation({ summary: 'Danh sách rate plan của khách sạn của user (search theo tên & room_type_id)' })
+  list(
+    @Query(new ValidationPipe({ transform: true })) query: ListRatePlansDto,
+    @User() user: IUser,
+  ) {
+    return this.service.findAll(user, query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<RatePlan> {
-    return this.service.findOne(id);
+  @ApiOperation({ summary: 'Chi tiết 1 rate plan thuộc hotel của user' })
+  detail(@Param('id') id: string, @User() user: IUser) {
+    return this.service.findOne(id, user);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Tạo rate plan cho hotel của user' })
+  create(@Body() dto: CreateRatePlanDto, @User() user: IUser) {
+    return this.service.create(dto, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateRatePlanDto): Promise<RatePlan> {
-    return this.service.update(id, dto);
-  }
-
-  @Patch(':id/deactivate')
-  deactivate(@Param('id') id: string): Promise<RatePlan> {
-    return this.service.deactivate(id);
+  @ApiOperation({ summary: 'Cập nhật rate plan (thuộc hotel của user)' })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateRatePlanDto,
+    @User() user: IUser,
+  ) {
+    return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.service.remove(id);
+  @ApiOperation({ summary: 'Xóa rate plan (thuộc hotel của user)' })
+  remove(@Param('id') id: string, @User() user: IUser) {
+    return this.service.remove(id, user);
   }
 }
