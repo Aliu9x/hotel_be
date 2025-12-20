@@ -7,7 +7,10 @@ import {
   IsString,
   IsArray,
   IsEnum,
-  ValidateIf
+  ValidateIf,
+  IsBoolean,
+  IsNumber,
+  ArrayUnique,
 } from 'class-validator';
 
 export enum DestinationType {
@@ -19,42 +22,91 @@ export enum DestinationType {
 
 export class AvailabilitySearchDto {
   @IsDateString()
-  checkin!: string; 
+  checkin: string;
 
   @IsDateString()
-  checkout!: string; 
+  checkout: string;
 
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  adults!: number;
+  rooms: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  adults: number;
 
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  children!: number;
+  children: number;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  rooms!: number;
+  hotelId?: number;
 
-  @IsOptional() @Type(() => Number) @IsInt() provinceId?: number;
-  @IsOptional() @Type(() => Number) @IsInt() districtId?: number;
-  @IsOptional() @Type(() => Number) @IsInt() wardId?: number;
-  @IsOptional() @Type(() => Number) hotelId?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  provinceId?: number;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) starMin?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) starMax?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  districtId?: number;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(0) priceMin?: number;
-  @IsOptional() @Type(() => Number) @IsInt() @Min(0) priceMax?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  wardId?: number;
 
-  @IsOptional() @IsArray() @Type(() => Number)
-  amenityIds?: number[];
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @Type(() => Number)
+  hotelAmenityIds?: number[];
 
-  @IsOptional() @IsString()
-  q?: string;
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @Type(() => Number)
+  roomAmenityIds?: number[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  minStar?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  maxStar?: number;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  refundableOnly?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  payAtHotelOnly?: boolean;
+
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortPrice?: 'asc' | 'desc' = 'desc';
 }
 
 export interface RoomTypeAvailability {
@@ -66,9 +118,15 @@ export interface RoomTypeAvailability {
     max_children: number;
     max_occupancy: number;
   };
+  bed_config: string;
+  room_size_label?: string;
+  floor_level: string;
+  smoking_allowed: boolean;
+  view: string;
   total_rooms: number;
   can_fulfill: boolean;
-  avg_price?: number;              
+  avg_price?: number;
+  best_price?: number;
 }
 
 export interface HotelAvailability {
@@ -79,7 +137,9 @@ export interface HotelAvailability {
   province?: string;
   district?: string;
   ward?: string;
+  hotel_min_price?: number;
   matched_room_types: RoomTypeAvailability[];
+  images: string[];
 }
 
 export interface AvailabilityResponse {

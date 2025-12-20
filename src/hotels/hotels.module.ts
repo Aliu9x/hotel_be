@@ -7,11 +7,12 @@ import { User } from 'src/users/entities/user.entity';
 import { Province } from 'src/locations/entities/province.entity';
 import { District } from 'src/locations/entities/district.entity';
 import { Ward } from 'src/locations/entities/ward.entity';
+import { HotelImage } from './entities/hotel-image.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Hotel, User, Province, District, Ward])],
+  imports: [TypeOrmModule.forFeature([Hotel, User, Province, District, Ward,HotelImage])],
   controllers: [HotelsController],
   providers: [HotelsService],
-  exports: [TypeOrmModule, HotelsService],
+  exports: [ HotelsService],
 })
 export class HotelsModule {}

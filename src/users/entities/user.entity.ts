@@ -18,7 +18,6 @@ import { Hotel } from 'src/hotels/entities/hotel.entity';
 
 export enum SignupMethod {
   SELF = 'SELF',
-  INVITED = 'INVITED',
   ADMIN_CREATED = 'ADMIN_CREATED',
 }
 
@@ -50,8 +49,6 @@ export class User {
   })
   signup_method: SignupMethod;
 
-  @Column({ type: 'bigint', nullable: true })
-  created_by_user_id?: string | null;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;

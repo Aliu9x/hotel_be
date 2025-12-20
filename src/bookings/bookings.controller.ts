@@ -20,34 +20,21 @@ import { Public } from 'src/decorator/customize';
 export class BookingsController {
   constructor(private readonly service: BookingService) {}
 
-  @Post('create')
+  @Post()
   @Public()
   async create(@Body() dto: CreateBookingDto) {
-    return await this.service.create(dto);
+    return this.service.create(dto);
   }
 
-  @Post('reserve')
+  @Post(':id/pay/momo')
   @Public()
-  async reserve(@Body() dto: ReserveBookingDto) {
-    return await this.service.reserve(dto);
-  }
-
-  @Post('cancel-hold')
-  @Public()
-  async cancelHold(@Body() dto: CancelHoldDto) {
-    return await this.service.cancelHold(dto);
-  }
-
-  @Post('payment-method')
-  @Public()
-  async paymentMethod(@Body() dto: UpdatePaymentMethodDto) {
-    const res = await this.service.updatePaymentMethod(dto);
-    return { success: true, data: res };
+  async startMomo(@Param('id') id: string) {
+    return this.service.startMomoPayment(id);
   }
 
   @Get(':id')
-  async get(@Param('id') id: string) {
-    const b = await this.service.findOne(Number(id));
-    return { success: true, data: b };
+  @Public()
+  async status(@Param('id') id: string) {
+    return this.service.getStatus(id);
   }
 }

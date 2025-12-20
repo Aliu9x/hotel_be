@@ -1,15 +1,13 @@
-import { IsOptional, IsString, IsEmail } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsIn } from 'class-validator';
+import { HotelApprovalStatus } from '../entities/hotel.entity';
 
-// Contract step payload (legal + signatory + filenames)
 export class UpdateContractDto {
-  // Legal entity
   @IsString()
   legal_name!: string;
 
   @IsString()
   legal_address!: string;
 
-  // Signatory
   @IsString()
   signer_full_name!: string;
 
@@ -19,7 +17,6 @@ export class UpdateContractDto {
   @IsEmail()
   signer_email!: string;
 
-  // Optional filenames (set via upload endpoint or FE passes back)
   @IsOptional()
   @IsString()
   identity_doc_filename?: string;
@@ -27,4 +24,8 @@ export class UpdateContractDto {
   @IsOptional()
   @IsString()
   contract_pdf_filename?: string;
+}
+export class UpdateApprovalDto {
+  @IsIn(['PENDING', 'APPROVED', 'SUSPENDED'])
+  status: HotelApprovalStatus;
 }

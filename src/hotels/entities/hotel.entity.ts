@@ -15,7 +15,7 @@ import {
   OneToMany,
 } from 'typeorm';
 
-export type HotelApprovalStatus = 'PENDING' | 'APPROVED';
+export type HotelApprovalStatus = 'PENDING' | 'APPROVED'|'SUSPENDED';
 
 @Entity('hotels')
 @Index('idx_hotels_province_id', ['province_id'])
@@ -52,7 +52,6 @@ export class Hotel {
   @Column({ type: 'int', nullable: true })
   ward_id?: number;
 
-  // Resolved names (display)
   @Column({ type: 'varchar', length: 255, nullable: true })
   province_name?: string;
 
@@ -62,7 +61,6 @@ export class Hotel {
   @Column({ type: 'varchar', length: 255, nullable: true })
   ward_name?: string;
 
-  // Contact (overview)
   @Column({ type: 'varchar', length: 255, nullable: true })
   contact_name?: string;
 
@@ -72,14 +70,12 @@ export class Hotel {
   @Column({ type: 'varchar', length: 50, nullable: true })
   contact_phone?: string;
 
-  // Legal entity (contract step)
   @Column({ type: 'varchar', length: 255, nullable: true })
   legal_name?: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   legal_address?: string;
 
-  // Signatory (only full name, phone, email, CCCD image)
   @Column({ type: 'varchar', length: 255, nullable: true })
   signer_full_name?: string;
 
@@ -89,12 +85,11 @@ export class Hotel {
   @Column({ type: 'varchar', length: 255, nullable: true })
   signer_email?: string;
 
-  // Files under /public/contract/{hotelId}
   @Column({ type: 'varchar', length: 255, nullable: true })
-  identity_doc_filename?: string; // CCCD (jpg/png)
+  identity_doc_filename?: string; 
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  contract_pdf_filename?: string; // Contract PDF
+  contract_pdf_filename?: string; 
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;
@@ -102,7 +97,6 @@ export class Hotel {
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updated_at: Date;
 
-  // One account -> one hotel policy (enforced in service). Keep FK to user.
   @ManyToOne(() => User, (user) => user.created_hotels, { nullable: true })
   @JoinColumn({ name: 'created_by_user_id' })
   created_by_user?: User;

@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   Query,
+  Put,
+  BadRequestException,
 } from '@nestjs/common';
 import { AmenityCategoryService } from './amenity-category.service';
 import { CreateAmenityCategoryDto } from './dto/create-amenity-category.dto';
 import { UpdateAmenityCategoryDto } from './dto/update-amenity-category.dto';
-import { ResponseMessage } from 'src/decorator/customize';
+import { Public, ResponseMessage } from 'src/decorator/customize';
 import { ListCategoriesDto } from './dto/list-categories.dto';
 
 @Controller('amenity-category')
@@ -25,6 +27,7 @@ export class AmenityCategoryController {
   }
 
   @Get('type')
+  @Public()
   @ResponseMessage('Lấy danh sách loại tiện ích')
   findAllType(@Query('applies_to') applies_to?: string) {
     return this.service.findAllType(applies_to);
@@ -38,6 +41,11 @@ export class AmenityCategoryController {
     return this.service.findAll(query);
   }
 
+  @Get('filter')
+  @Public()
+  async findAllFilter(@Query('applies_to') applies_to?: string) {
+    return this.service.findAllFilter(applies_to);
+  }
   @Get(':id')
   @ResponseMessage('Chi tiết loại tiện ích')
   findOne(@Param('id') id: string) {
@@ -51,6 +59,17 @@ export class AmenityCategoryController {
     updateDto: UpdateAmenityCategoryDto,
   ) {
     return await this.service.update(id, updateDto);
+  }
+
+  @Post(':id')
+  async updateAmenitySearchRaw(
+    @Param('id') id: string,
+    @Body('active') active: boolean,
+  ) {
+    if (typeof active !== 'boolean') {
+      throw new BadRequestException('Field "active" must be boolean');
+    }
+    return await this.service.updateAmenitySearch(id, active);
   }
 
   @Delete(':id')

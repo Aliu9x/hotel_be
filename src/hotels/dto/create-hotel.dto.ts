@@ -1,14 +1,12 @@
 import { IsInt, IsOptional, IsString, IsIn, IsEmail } from 'class-validator';
 
 export class CreateHotelDto {
-  // Registration meta
   @IsString()
-  registration_code!: string; // numeric-only from FE
+  registration_code!: string;
 
   @IsIn(['PENDING', 'APPROVED'])
   approval_status!: 'PENDING' | 'APPROVED';
 
-  // Basic info
   @IsString()
   name!: string;
 
@@ -20,7 +18,6 @@ export class CreateHotelDto {
   @IsInt()
   star_rating?: number;
 
-  // Address (no country_code, no timezone)
   @IsOptional()
   @IsString()
   address_line?: string;
@@ -37,7 +34,6 @@ export class CreateHotelDto {
   @IsInt()
   ward_id?: number;
 
-  // Contact (overview)
   @IsOptional()
   @IsString()
   contact_name?: string;

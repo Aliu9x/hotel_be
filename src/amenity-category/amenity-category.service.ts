@@ -18,11 +18,10 @@ export class AmenityCategoryService {
 
   async create(createDto: CreateAmenityCategoryDto) {
     const category = this.categoryRepo.create({
-      name_category: createDto.category, 
+      name_category: createDto.category,
       applies_to: createDto.applies_to,
       is_active: createDto.is_active ?? true,
     });
-
     const savedCategory = await this.categoryRepo.save(category);
     const amenities = createDto.amenities.map((item) =>
       this.amenityRepo.create({
@@ -30,7 +29,6 @@ export class AmenityCategoryService {
         category: savedCategory,
       }),
     );
-
     await this.amenityRepo.save(amenities);
     return this.categoryRepo.findOne({
       where: { id: savedCategory.id },
@@ -47,6 +45,7 @@ export class AmenityCategoryService {
 
     return qb.orderBy('category.created_at', 'DESC').getMany();
   }
+
   async findAll(query: ListCategoriesDto) {
     const {
       q,
@@ -84,6 +83,20 @@ export class AmenityCategoryService {
       },
       result,
     };
+  }
+
+  async findAllFilter(applies_to?: string) {
+    const qb = this.categoryRepo
+      .createQueryBuilder('category')
+      .leftJoin('category.amenities', 'amenities')
+      .select('amenities.name', 'name')
+      .addSelect('amenities.id', 'id')
+      .where('amenities.show_in_search = :show', { show: 1 });
+    if (applies_to) {
+      qb.andWhere('category.applies_to = :a', { a: applies_to });
+    }
+    const rows = await qb.getRawMany();
+    return rows;
   }
 
   async findOne(id: string) {
@@ -142,6 +155,17 @@ export class AmenityCategoryService {
       where: { id },
       relations: ['amenities'],
     });
+  }
+
+  async updateAmenitySearch(id: string, active: boolean) {
+    const check = await this.amenityRepo.findOneBy({ id });
+    if (!check) {
+      throw new NotFoundException(`Amenity with ID ${id} not found`);
+    }
+
+    check.show_in_search = Boolean(active);
+
+    return await this.amenityRepo.save(check);
   }
 
   async delete(id: string) {

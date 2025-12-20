@@ -7,14 +7,23 @@ import {
   UseInterceptors,
   UploadedFiles,
   Get,
+  Query,
+  Param,
+  ParseIntPipe,
+  NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { HotelsService } from './hotels.service';
 import { CreateHotelDto } from './dto/create-hotel.dto';
-import { UpdateContractDto } from './dto/update-contract.dto';
+import {
+  UpdateApprovalDto,
+  UpdateContractDto,
+} from './dto/update-contract.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { User } from 'src/decorator/customize';
 import { IUser } from 'src/interfaces/customize.interface';
+import { ListHotelsDto } from './dto/list-hotels.dto';
 
 @ApiTags('hotels')
 @Controller('hotels')
@@ -63,5 +72,47 @@ export class HotelsController {
       pdfFile,
       identityImage,
     );
+  }
+  @Get('load-images')
+  loadImage(@User() user) {
+    return this.service.loadImagesFileNames(user);
+  }
+
+  @Get('images/:id')
+  loadImageByHotel(@Param('id', ParseIntPipe) id: string) {
+    return this.service.loadImageByHotel(id);
+  }
+
+  @Get()
+  async list(@Query() query: ListHotelsDto) {
+    const { result, total, page, limit } = await this.service.list(query);
+    return {
+      result,
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
+  }
+  @Get(':id')
+  async getDetail(@Param('id', ParseIntPipe) id: number) {
+    const hotel = await this.service.getById(id);
+    if (!hotel) {
+      throw new NotFoundException('Hotel not found');
+    }
+    return hotel;
+  }
+
+  @Patch(':id/approval')
+  async updateApproval(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateApprovalDto,
+  ) {
+    const updated = await this.service.updateApprovalStatus(id, dto.status);
+    if (!updated) {
+      throw new NotFoundException('Hotel not found');
+    }
+    return updated;
   }
 }

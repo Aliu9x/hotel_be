@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SuggestQueryDto } from './dto/create-search.dto';
 import { Public } from 'src/decorator/customize';
@@ -16,7 +16,7 @@ export class SearchController {
     return data;
   }
 
-  @Get('availability')
+  @Post('availability')
   @Public()
   async search(@Query() query: AvailabilitySearchDto) {
     const data = await this.service.search(query);

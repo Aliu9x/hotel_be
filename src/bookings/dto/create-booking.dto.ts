@@ -15,17 +15,17 @@ export class CreateBookingDto {
   @IsString() contactName!: string;
   @IsEmail() contactEmail!: string;
   @IsString() contactPhone!: string;
-  @IsInt() @IsOptional() isSelfBook?: number; // 1 | 0
+  @IsInt() @IsOptional() isSelfBook?: number; 
 
   @IsString() guestName!: string;
 
   @IsOptional()
-  specialRequests?: string[]; // mảng từ FE
+  specialRequests?: string[]; 
 
-  /* Pricing snapshot */
-  @IsInt() @Min(0) pricePerNight!: number; // gửi vào để lưu snapshot hoặc dùng decimal
+
+  @IsInt() @Min(0) pricePerNight!: number; 
   @IsOptional() promoTag?: string;
-  @IsInt() @Min(0) prepayRequired!: number; // 1/0
+  @IsInt() @Min(0) prepayRequired!: number; 
 }
 
 export class ReserveBookingDto {
@@ -38,7 +38,7 @@ export class CancelHoldDto {
 
 export class UpdatePaymentMethodDto {
   @IsInt() bookingId!: number;
-  @IsString() paymentMethod!: string; // VIETQR | PAY_AT_HOTEL ...
+  @IsString() paymentMethod!: string; 
 }
 
 export interface BookingResponse {

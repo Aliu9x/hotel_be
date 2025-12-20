@@ -26,6 +26,7 @@ import { LocationsModule } from './locations/locations.module';
 import { CronModule } from './cron/cron.module';
 import { SearchModule } from './search/search.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { BookingsModule } from './bookings/bookings.module';
     CronModule,
     SearchModule,
     BookingsModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [

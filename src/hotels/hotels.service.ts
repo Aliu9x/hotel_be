@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,6 +17,8 @@ import { Ward } from 'src/locations/entities/ward.entity';
 import { IUser } from 'src/interfaces/customize.interface';
 import * as fs from 'fs';
 import * as path from 'path';
+import { HotelImage } from './entities/hotel-image.entity';
+import { ListHotelsDto } from './dto/list-hotels.dto';
 
 @Injectable()
 export class HotelsService {
@@ -26,9 +29,9 @@ export class HotelsService {
     @InjectRepository(District)
     private readonly districtRepo: Repository<District>,
     @InjectRepository(Ward) private readonly wardRepo: Repository<Ward>,
+    @InjectRepository(HotelImage)
+    private readonly hotelImage: Repository<HotelImage>,
   ) {}
-
-  // Helper: get current user's hotel id (from token if provided, else lookup)
   async findHotelIdByOwner(ownerId: string | number): Promise<string | null> {
     const idStr = String(ownerId);
     const row = await this.hotelRepo.findOne({
@@ -38,15 +41,10 @@ export class HotelsService {
     if (!row) return null;
     return String(row.id);
   }
-
-  // Create hotel with single-hotel-per-account policy
   async createHotel(dto: CreateHotelDto, user: IUser) {
-    // Enforce numeric registration_code
     if (!/^[0-9]+$/.test(dto.registration_code)) {
       throw new BadRequestException('registration_code phải là số');
     }
-
-    // Enforce one hotel per account
     const existed = await this.hotelRepo.findOne({
       select: ['id'],
       where: { created_by_user_id: String(user.id) },
@@ -56,8 +54,6 @@ export class HotelsService {
         `Tài khoản đã tạo khách sạn (id=${existed.id}). Chỉ được tạo 1 khách sạn.`,
       );
     }
-
-    // Resolve location names if provided
     let provinceName: string | undefined;
     let districtName: string | undefined;
     let wardName: string | undefined;
@@ -103,12 +99,7 @@ export class HotelsService {
 
     const saved = await this.hotelRepo.save(hotel);
 
-    const dir = path.join(
-      process.cwd(),
-      'public',
-      'contract',
-      String(saved.id),
-    );
+    const dir = path.join(process.cwd(), 'public', 'images', 'contract');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     return saved;
@@ -121,50 +112,81 @@ export class HotelsService {
   }
 
   async getCurrentUsersHotelOrThrow(user: IUser) {
-    const hid = await this.hotelRepo.findOne({ where: { id: user.hotel_id } });
-    if (!hid) throw new NotFoundException('Tài khoản chưa có khách sạn');
+    const hid = await this.hotelRepo.findOne({
+      where: { id: user.hotel_id, created_by_user_id: user.id },
+    });
+    if (!hid) throw new BadRequestException('Tài khoản chưa có khách sạn');
     return hid;
   }
 
   async updateMyHotelContract(dto: UpdateContractDto, user: IUser) {
-    const hotel = await this.getCurrentUsersHotelOrThrow(user);
+    const idNum = Number(user?.hotel_id);
+
+    if (!idNum || Number.isNaN(idNum)) {
+      throw new BadRequestException(
+        'User chưa có hotel_id hợp lệ. Vui lòng hoàn tất Mục 1 để tạo khách sạn.',
+      );
+    }
+
+    const hotel = await this.hotelRepo.findOne({
+      where: { id: String(idNum) },
+    });
+    if (!hotel) {
+      throw new NotFoundException(`Không tìm thấy khách sạn với id=${idNum}.`);
+    }
 
     hotel.legal_name = dto.legal_name;
     hotel.legal_address = dto.legal_address;
-
     hotel.signer_full_name = dto.signer_full_name;
     hotel.signer_phone = dto.signer_phone;
     hotel.signer_email = dto.signer_email;
 
-    if (dto.identity_doc_filename)
+    if (dto.identity_doc_filename) {
       hotel.identity_doc_filename = dto.identity_doc_filename;
-    if (dto.contract_pdf_filename)
+    }
+    if (dto.contract_pdf_filename) {
       hotel.contract_pdf_filename = dto.contract_pdf_filename;
+    }
 
     await this.hotelRepo.save(hotel);
     return hotel;
   }
+
   async saveMyHotelContractFiles(
     user: IUser,
     pdfFile?: Express.Multer.File,
     identityImage?: Express.Multer.File,
   ) {
-    const hotel = await this.getCurrentUsersHotelOrThrow(user);
-    const hotelId = String(hotel.id);
+    if (!pdfFile && !identityImage) {
+      throw new BadRequestException('Thiếu file upload');
+    }
 
-    const dir = path.join(process.cwd(), 'public', 'contract', hotelId);
+    const idNum = Number(user?.hotel_id);
+
+    if (!idNum || Number.isNaN(idNum)) {
+      throw new BadRequestException(
+        'User chưa có hotel_id hợp lệ. Vui lòng hoàn tất Mục 1 để tạo khách sạn.',
+      );
+    }
+
+    const hotel = await this.hotelRepo.findOne({
+      where: { id: String(idNum) },
+    });
+    if (!hotel) {
+      throw new NotFoundException(`Không tìm thấy khách sạn với id=${idNum}.`);
+    }
+
+    const dir = path.join(process.cwd(), 'public', 'images', 'contract');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-    let contractPdfFilename: string | undefined;
-    let identityDocFilename: string | undefined;
 
     if (pdfFile) {
       const ext = path.extname(pdfFile.originalname).toLowerCase();
-      if (ext !== '.pdf')
+      if (ext !== '.pdf') {
         throw new BadRequestException('Hợp đồng phải là file PDF');
-      contractPdfFilename = `contract_${Date.now()}.pdf`;
-      fs.writeFileSync(path.join(dir, contractPdfFilename), pdfFile.buffer);
-      hotel.contract_pdf_filename = contractPdfFilename;
+      }
+      const filename = `contract_${Date.now()}.pdf`;
+      fs.writeFileSync(path.join(dir, filename), pdfFile.buffer);
+      hotel.contract_pdf_filename = filename;
     }
 
     if (identityImage) {
@@ -172,12 +194,9 @@ export class HotelsService {
       if (!['.jpg', '.jpeg', '.png'].includes(extImg)) {
         throw new BadRequestException('Ảnh CCCD phải là JPG/PNG');
       }
-      identityDocFilename = `cccd_${Date.now()}${extImg}`;
-      fs.writeFileSync(
-        path.join(dir, identityDocFilename),
-        identityImage.buffer,
-      );
-      hotel.identity_doc_filename = identityDocFilename;
+      const filename = `cccd_${Date.now()}${extImg}`;
+      fs.writeFileSync(path.join(dir, filename), identityImage.buffer);
+      hotel.identity_doc_filename = filename;
     }
 
     await this.hotelRepo.save(hotel);
@@ -186,5 +205,134 @@ export class HotelsService {
       contract_pdf_filename: hotel.contract_pdf_filename,
       identity_doc_filename: hotel.identity_doc_filename,
     };
+  }
+
+  async loadImagesFileNames(
+    user: IUser,
+  ): Promise<{ thumbnail: string | null; slider: string[] }> {
+    const hotel = await this.hotelRepo.findOne({
+      where: { id: user.hotel_id },
+    });
+    if (!hotel) {
+      throw new NotFoundException('Hotel not found for current user');
+    }
+    const rows = await this.hotelImage.find({
+      where: { hotel_id: user.hotel_id },
+      order: { id: 'ASC' },
+    });
+    if (rows.length === 0) {
+      return { thumbnail: null, slider: [] };
+    }
+
+    let cover = rows.find((r) => r.is_cover === true) ?? null;
+    const coverId = cover?.id ?? null;
+    const gallery = rows.filter((r) => r.id !== coverId);
+
+    return {
+      thumbnail: cover ? cover.file_name : null,
+      slider: gallery.map((g) => g.file_name),
+    };
+  }
+
+  async loadImageByHotel(id: string) {
+  const hotel = await this.hotelRepo.findOne({
+    where: { id },
+  });
+
+  if (!hotel) {
+    throw new NotFoundException('No hotel');
+  }
+
+  const images = await this.hotelImage.find({
+    where: { hotel_id: id },
+    select: ['file_name'],        
+    order: {
+      is_cover: 'DESC',             
+      created_at: 'ASC',            
+    },
+  });
+
+  return images.map(i => i.file_name);
+}
+
+
+  async list(
+    params: ListHotelsDto,
+  ): Promise<{ result: Hotel[]; total: number; page: number; limit: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      q,
+      status,
+      provinceId,
+      districtId,
+      wardId,
+      starRating,
+      orderBy = 'created_at',
+      order = 'DESC',
+    } = params;
+
+    const qb = this.hotelRepo.createQueryBuilder('h');
+
+    if (q) {
+      qb.andWhere('LOWER(h.name) LIKE :q', { q: `%${q.toLowerCase()}%` });
+    }
+
+    if (status) {
+      qb.andWhere('h.approval_status = :status', { status });
+    }
+
+    if (provinceId) {
+      qb.andWhere('h.province_id = :provinceId', { provinceId });
+    }
+
+    if (districtId) {
+      qb.andWhere('h.district_id = :districtId', { districtId });
+    }
+
+    if (wardId) {
+      qb.andWhere('h.ward_id = :wardId', { wardId });
+    }
+
+    if (starRating) {
+      qb.andWhere('h.star_rating = :starRating', { starRating });
+    }
+
+    const safeOrderBy = [
+      'created_at',
+      'updated_at',
+      'star_rating',
+      'name',
+    ].includes(orderBy)
+      ? orderBy
+      : 'created_at';
+    const safeOrder = order === 'ASC' ? 'ASC' : 'DESC';
+
+    qb.orderBy(`h.${safeOrderBy}`, safeOrder as 'ASC' | 'DESC');
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [result, total] = await qb.getManyAndCount();
+
+    return { result, total, page, limit };
+  }
+
+  async getById(id: number): Promise<Hotel | null> {
+    return await this.hotelRepo.findOne({
+      where: { id: String(id) },
+    });
+  }
+
+  async updateApprovalStatus(
+    id: number,
+    status: Hotel['approval_status'],
+  ): Promise<Hotel | null> {
+    const hotel = await this.hotelRepo.findOne({
+      where: { id: String(id) },
+    });
+    if (!hotel) return null;
+    hotel.approval_status = status;
+    await this.hotelRepo.save(hotel);
+    return hotel;
   }
 }

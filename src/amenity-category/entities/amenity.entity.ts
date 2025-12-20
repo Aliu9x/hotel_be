@@ -17,6 +17,9 @@ export class Amenity {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ type: 'boolean', default: false, name: 'show_in_search' })
+  show_in_search: boolean;
+
   @ManyToOne(() => AmenityCategory, (category) => category.amenities, {
     onDelete: 'CASCADE',
   })

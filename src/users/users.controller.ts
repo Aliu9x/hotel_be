@@ -6,42 +6,41 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  ConflictException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { Public, User } from 'src/decorator/customize';
-
 import { ApiTags } from '@nestjs/swagger';
+import { ListUsersDto } from './dto/list-users.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  @Public()
-  create(@Body() dto: CreateUserDto, @User() user) {
-    return this.usersService.create(dto, user);
+   @Post()
+  async create(@Body() dto: CreateUserDto) {
+    const exists = await this.usersService.findOneByUsername(dto.email);
+    if (exists) {
+      throw new ConflictException('Email đã tồn tại');
+    }
+    const user = await this.usersService.create(dto);
+    const { password, ...safe } = user as any;
+    return { result: safe };
   }
 
-  // @Get()
-  // findAll(@User() user) {
-  //   return this.usersService.findAll(user);
-  // }
+    @Get()
+  async list(@Query() query: ListUsersDto) {
+    const { result, total, page, limit } = await this.usersService.list(query);
+    return {
+      result,
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
+  }
 
-  // @Get('me')
-  // me(@User() user) {
-  //   return this.usersService.me(user);
-  // }
-
-  // @Get(':id')
-  // findOne(@Param('id') id: string, @User() user) {
-  //   return this.usersService.findOne(id,user);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() dto: UpdateUserDto, @User() user) {
-  //   return this.usersService.update(id, dto, user);
-  // }
 }

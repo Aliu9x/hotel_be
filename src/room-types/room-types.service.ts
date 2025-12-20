@@ -222,8 +222,7 @@ export class RoomTypesService {
 
     roomType.updated_at = new Date();
 
-    const saved = await this.repo.save(roomType);
-    return { data: saved };
+    return await this.repo.save(roomType);
   }
 
   async removeHard(id: string): Promise<void> {

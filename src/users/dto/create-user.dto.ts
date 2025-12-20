@@ -8,27 +8,26 @@ import {
   Length,
   Matches,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { Role } from 'src/interfaces/customize.interface';
 
 export class CreateUserDto {
-  @IsString()
   @IsNotEmpty()
-  @Length(1, 100)
-  username: string;
+  @IsString()
+  @MinLength(6)
+  @MaxLength(128)
+  password: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  full_name?: string;
+  full_name: string;
 
   @IsOptional()
   @IsEmail()
   @MaxLength(255)
-  email: string;
-
-  @IsString({ message: 'Mật khẩu phải là chuỗi ký tự' })
-  password: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
@@ -36,17 +35,11 @@ export class CreateUserDto {
   phone?: string;
 
   @IsOptional()
-  @IsEnum(Role, { message: 'role không hợp lệ' })
-  role: Role;
+  @IsEnum(Role)
+  role?: Role = Role.CUSTOMER;
 
-  @IsOptional()
-  hotelId?: string;
 }
 export class RegisterUserDTo {
-  // @IsString()
-  // @IsNotEmpty()
-  // @Length(1, 100)
-  // username: string;
 
   @IsOptional()
   @IsString()

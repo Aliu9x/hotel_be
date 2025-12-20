@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Province } from '../locations/entities/province.entity';
 import { District } from '../locations/entities/district.entity';
 import { Ward } from '../locations/entities/ward.entity';
@@ -29,7 +31,11 @@ import {
   HotelRoomTypesResponse,
   RatePlanPrice,
 } from './dto/hotel-room-types.dto';
-import { RatePlan } from 'src/rate-plans/entities/rate-plan.entity';
+import {
+  RatePlan,
+  RatePlanType,
+} from 'src/rate-plans/entities/rate-plan.entity';
+import { HotelsService } from 'src/hotels/hotels.service';
 
 type TType = 'hotel' | 'province' | 'district' | 'ward';
 
@@ -48,6 +54,8 @@ export class SearchService {
     private readonly inventoryRepo: Repository<Inventory>,
     @InjectRepository(RatePlan)
     private readonly ratePlanRepo: Repository<RatePlan>,
+
+    private readonly hotelsService: HotelsService,
   ) {}
 
   private parseTypes(raw?: string): TType[] {
@@ -163,6 +171,9 @@ export class SearchService {
       path_string,
     };
   }
+  buildAdminLabel(type?: string, name?: string) {
+    return type && name ? `${type} ${name}` : null;
+  }
 
   async suggest(dto: SuggestQueryDto): Promise<SuggestItem[]> {
     const { q, limit = 12, types } = dto;
@@ -172,12 +183,12 @@ export class SearchService {
     const typeList = this.parseTypes(types);
     const perGroup = Math.max(3, Math.floor(limit / typeList.length));
     const items: SuggestItem[] = [];
-
     if (typeList.includes('hotel')) {
       const hotels = await this.hotelRepo
         .createQueryBuilder('h')
-        .where(
-          '(h.name LIKE :raw OR h.address_line LIKE :raw OR h.province LIKE :raw OR h.district LIKE :raw OR h.ward LIKE :raw)',
+        .where("h.approval_status = 'APPROVED'")
+        .andWhere(
+          '(h.name LIKE :raw OR h.address_line LIKE :raw OR h.province_name LIKE :raw OR h.district_name LIKE :raw OR h.ward_name LIKE :raw)',
           { raw: `%${query}%` },
         )
         .addSelect(
@@ -197,7 +208,12 @@ export class SearchService {
             id: h.id,
             label: h.name,
             query,
-            subtitle: [h.address_line, h.ward_id, h.district_id, h.province_id]
+            subtitle: [
+              h.address_line,
+              this.buildAdminLabel('phường', h.ward_name),
+              this.buildAdminLabel('quận', h.district_name),
+              this.buildAdminLabel('thàn phố', h.province_name),
+            ]
               .filter(Boolean)
               .join(', '),
             province_id: h.province_id,
@@ -321,7 +337,6 @@ export class SearchService {
         );
       });
     }
-
     return items.slice(0, limit);
   }
   private computeNights(checkin: string, checkout: string): number {
@@ -345,9 +360,9 @@ export class SearchService {
         'h.name',
         'h.star_rating',
         'h.address_line',
-        'h.province',
-        'h.district',
-        'h.ward',
+        'h.province_name',
+        'h.district_name',
+        'h.ward_name',
         'h.province_id',
         'h.district_id',
         'h.ward_id',
@@ -356,6 +371,7 @@ export class SearchService {
       .andWhere('rt.max_children >= :children', { children: dto.children })
       .andWhere('rt.max_occupancy >= :totalGuests', { totalGuests });
 
+    // Địa lý/hotel
     if (dto.hotelId) {
       rtQB.andWhere('h.id = :hid', { hid: dto.hotelId });
     } else {
@@ -365,18 +381,112 @@ export class SearchService {
         rtQB.andWhere('h.district_id = :dist', { dist: dto.districtId });
       if (dto.wardId) rtQB.andWhere('h.ward_id = :ward', { ward: dto.wardId });
     }
-    // if (dto.q && dto.q.trim()) {
-    //   rtQB.andWhere('h.name LIKE :q', { q: `%${dto.q.trim()}%` });
-    // }
-    // if (dto.starMin)
-    //   rtQB.andWhere('h.star_rating >= :smin', { smin: dto.starMin });
-    // if (dto.starMax)
-    //   rtQB.andWhere('h.star_rating <= :smax', { smax: dto.starMax });
 
+    // Sao
+    if (dto.minStar != null)
+      rtQB.andWhere('h.star_rating >= :minStar', { minStar: dto.minStar });
+    if (dto.maxStar != null)
+      rtQB.andWhere('h.star_rating <= :maxStar', { maxStar: dto.maxStar });
+
+    // Amenities: match all
+    if (dto.hotelAmenityIds?.length) {
+      rtQB.andWhere(
+        `
+      (
+        SELECT COUNT(DISTINCT am_h.amenity_id)
+        FROM amenity_mappings am_h
+        WHERE am_h.hotel_id = h.id
+          AND am_h.room_type_id IS NULL
+          AND am_h.amenity_id IN (:...hotelAmenityIds)
+      ) = :hotelAmenityCount
+      `,
+        {
+          hotelAmenityIds: dto.hotelAmenityIds,
+          hotelAmenityCount: dto.hotelAmenityIds.length,
+        },
+      );
+    }
+    if (dto.roomAmenityIds?.length) {
+      rtQB.andWhere(
+        `
+      (
+        SELECT COUNT(DISTINCT am_r.amenity_id)
+        FROM amenity_mappings am_r
+        WHERE am_r.room_type_id = rt.id
+          AND am_r.amenity_id IN (:...roomAmenityIds)
+      ) = :roomAmenityCount
+      `,
+        {
+          roomAmenityIds: dto.roomAmenityIds,
+          roomAmenityCount: dto.roomAmenityIds.length,
+        },
+      );
+    }
+
+    let rpCond = '';
+    const rpParams: Record<string, any> = {};
+
+    if (dto.minPrice != null && dto.maxPrice != null) {
+      rpCond += ' AND rp.price_amount BETWEEN :minPrice AND :maxPrice';
+      rpParams['minPrice'] = dto.minPrice;
+      rpParams['maxPrice'] = dto.maxPrice;
+    } else if (dto.minPrice != null) {
+      rpCond += ' AND rp.price_amount >= :minPrice';
+      rpParams['minPrice'] = dto.minPrice;
+    } else if (dto.maxPrice != null) {
+      rpCond += ' AND rp.price_amount <= :maxPrice';
+      rpParams['maxPrice'] = dto.maxPrice;
+    }
+
+    if (dto.refundableOnly) {
+      rpCond += ' AND rp.type = :rpTypeRefundable';
+      rpParams['rpTypeRefundable'] = RatePlanType.REFUNDABLE;
+    }
+    if (dto.payAtHotelOnly) {
+      rpCond += ' AND rp.prepayment_required = false';
+    }
+
+    rtQB.andWhere(
+      `
+    EXISTS (
+      SELECT 1
+      FROM rate_plans rp
+      WHERE rp.room_type_id = rt.id
+      ${rpCond}
+    )
+    `,
+      rpParams,
+    );
+
+    rtQB.addSelect(
+      `
+    (
+      SELECT MIN(rp2.price_amount)
+      FROM rate_plans rp2
+      WHERE rp2.room_type_id = rt.id
+      ${rpCond.replaceAll('rp.', 'rp2.')}
+    )
+    `,
+      'best_price',
+    );
+
+    // ORDER BY theo best_price: mặc định DESC (giá giảm dần)
+    const sortDir = dto.sortPrice === 'asc' ? 'ASC' : 'DESC';
+    rtQB.orderBy('best_price IS NULL', 'ASC').addOrderBy('best_price', sortDir);
+    // Thực thi query
     const rows = await rtQB.getRawAndEntities();
     const roomTypes = rows.entities;
     const rawList = rows.raw;
-
+    const rtBestPriceMap = new Map<number, number | null>();
+    rawList.forEach((r) => {
+      const rtId = Number(r['rt_id'] ?? r['rt_id']);
+      const bpRaw = r['best_price'];
+      const bp = bpRaw != null ? Number(bpRaw) : null;
+      rtBestPriceMap.set(
+        rtId,
+        Number.isFinite(bp as number) ? (bp as number) : null,
+      );
+    });
     if (!roomTypes.length) {
       return {
         meta: {
@@ -391,6 +501,8 @@ export class SearchService {
         hotels: [],
       };
     }
+
+    // Map thông tin Hotel từ raw
     const hotelInfoMap = new Map<
       number,
       {
@@ -417,8 +529,9 @@ export class SearchService {
         });
       }
     });
-    const roomTypeIds = roomTypes.map((r) => r.id);
 
+    // Inventory
+    const roomTypeIds = roomTypes.map((r) => r.id);
     const invRows = await this.inventoryRepo
       .createQueryBuilder('inv')
       .select('inv.room_type_id', 'room_type_id')
@@ -456,14 +569,24 @@ export class SearchService {
       });
     });
 
+    // Build kết quả
     const hotelMap = new Map<number, HotelAvailability>();
+
     for (const rt of roomTypes) {
       const inv = invMap.get(Number(rt.id));
       if (!inv || inv.days_count !== nights) continue;
       if (inv.min_available < dto.rooms) continue;
+      const bestPrice = rtBestPriceMap.get(Number(rt.id)) ?? null;
+      if (bestPrice === null) {
+        // Nếu muốn loại bỏ room types không có best_price (hiếm), có thể continue;
+        // hoặc vẫn cho qua nhưng không dùng để tính min.
+      }
       const hotelId = rt.hotel_id;
       const info = hotelInfoMap.get(Number(hotelId));
       if (!info) continue;
+
+      const images = await this.hotelsService.loadImageByHotel(hotelId);
+
       if (!hotelMap.has(Number(hotelId))) {
         hotelMap.set(Number(hotelId), {
           hotel_id: Number(hotelId),
@@ -473,13 +596,28 @@ export class SearchService {
           province: info.province,
           district: info.district,
           ward: info.ward,
+          hotel_min_price: undefined,
           matched_room_types: [],
+          images: images,
         });
       }
-
+      const current = hotelMap.get(Number(hotelId))!;
+      if (bestPrice != null) {
+        if (
+          current.hotel_min_price == null ||
+          (typeof current.hotel_min_price === 'number' &&
+            bestPrice < current.hotel_min_price)
+        ) {
+          current.hotel_min_price = bestPrice;
+        }
+      }
       const rtAvail: RoomTypeAvailability = {
         room_type_id: Number(rt.id),
         name: rt.name,
+        bed_config: rt.bed_config,
+        floor_level: rt.floor_level,
+        smoking_allowed: rt.smoking_allowed,
+        view: rt.view,
         description: rt.description,
         capacity: {
           max_adults: rt.max_adults,
@@ -488,13 +626,14 @@ export class SearchService {
         },
         total_rooms: inv.total_rooms_snapshot || rt.total_rooms,
         can_fulfill: inv.min_available >= dto.rooms,
+        best_price: bestPrice ?? undefined,
       };
 
       hotelMap.get(Number(hotelId))!.matched_room_types.push(rtAvail);
     }
 
     const hotels = Array.from(hotelMap.values()).filter(
-      (h) => h.matched_room_types.length,
+      (h) => h.matched_room_types.length > 0,
     );
 
     return {
@@ -604,76 +743,77 @@ export class SearchService {
 
     const totalGuests = query.adults + query.children;
 
-    const availabilityList = roomTypes.map((rt) => {
-      const rtInv = inventoryMap.get(Number(rt.id)) || [];
-      const daysCount = rtInv.length;
-      const continuous_inventory = daysCount === nights;
+    const availabilityList = roomTypes
+      .map((rt) => {
+        const rtInv = inventoryMap.get(Number(rt.id)) || [];
+        const daysCount = rtInv.length;
+        const continuous_inventory = daysCount === nights;
 
-      let minAvailable: number | null = null;
-      let stopSellAny = false;
+        let minAvailable: number | null = null;
+        let stopSellAny = false;
 
-      const daily: HotelRoomTypeDaily[] = rtInv.map((inv) => {
-        const effective = inv.availableRooms - inv.blockedRooms - inv.roomsSold;
-        if (minAvailable === null || effective < minAvailable)
-          minAvailable = effective;
-        if (inv.stopSell === true) stopSellAny = true;
+        const daily: HotelRoomTypeDaily[] = rtInv.map((inv) => {
+          const effective =
+            inv.availableRooms - inv.blockedRooms - inv.roomsSold;
+          if (minAvailable === null || effective < minAvailable)
+            minAvailable = effective;
+          if (inv.stopSell === true) stopSellAny = true;
+          return {
+            date: inv.inventoryDate,
+            total_rooms: inv.totalRooms,
+            available_rooms: inv.availableRooms,
+            blocked_rooms: inv.blockedRooms,
+            rooms_sold: Number(inv.roomTypeId),
+            stop_sell: inv.stopSell,
+            effective_available: effective,
+          };
+        });
+
+        const capacity_ok =
+          query.adults <= rt.max_adults &&
+          query.children <= rt.max_children &&
+          totalGuests <= rt.max_occupancy;
+
+        const can_fulfill =
+          !!continuous_inventory &&
+          capacity_ok &&
+          minAvailable !== null &&
+          minAvailable >= query.rooms &&
+          !stopSellAny;
+
+        const rps = rpGrouped.get(Number(rt.id)) || [];
+        if (rps.length === 0) return null;
+        const rate_plans = rps.map((rp) =>
+          this.computeRatePlanPrice(
+            rp,
+            query.adults,
+            query.children,
+            nights,
+            query.rooms,
+          ),
+        );
+
         return {
-          date: inv.inventoryDate,
-          total_rooms: inv.totalRooms,
-          available_rooms: inv.availableRooms,
-          blocked_rooms: inv.blockedRooms,
-          rooms_sold: Number(inv.roomTypeId),
-          stop_sell: inv.stopSell,
-          effective_available: effective,
-        };
-      });
-
-      const capacity_ok =
-        query.adults <= rt.max_adults &&
-        query.children <= rt.max_children &&
-        totalGuests <= rt.max_occupancy;
-
-      const can_fulfill =
-        !!continuous_inventory &&
-        capacity_ok &&
-        minAvailable !== null &&
-        minAvailable >= query.rooms &&
-        !stopSellAny;
-
-      // Tính rate plans cho room type này
-      const rps = rpGrouped.get(Number(rt.id)) || [];
-      const rate_plans = rps.map((rp) =>
-        this.computeRatePlanPrice(
-          rp,
-          query.adults,
-          query.children,
+          room_type_id: Number(rt.id),
+          name: rt.name,
+          description: rt.description,
+          capacity: {
+            max_adults: rt.max_adults,
+            max_children: rt.max_children,
+            max_occupancy: rt.max_occupancy,
+          },
+          capacity_ok,
           nights,
-          query.rooms,
-        ),
-      );
-
-      // TRẢ VỀ ĐỦ THUỘC TÍNH
-      return {
-        room_type_id: Number(rt.id),
-        name: rt.name,
-        description: rt.description,
-        capacity: {
-          max_adults: rt.max_adults,
-          max_children: rt.max_children,
-          max_occupancy: rt.max_occupancy,
-        },
-        capacity_ok,
-        nights,
-        continuous_inventory,
-        min_available_rooms: minAvailable,
-        can_fulfill,
-        stop_sell_any: stopSellAny,
-        total_rooms_reference: rt.total_rooms,
-        daily,
-        rate_plans, // <<< QUAN TRỌNG: thêm trường này
-      };
-    });
-
+          continuous_inventory,
+          min_available_rooms: minAvailable,
+          can_fulfill,
+          stop_sell_any: stopSellAny,
+          total_rooms_reference: rt.total_rooms,
+          daily,
+          rate_plans,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
     return {
       meta: {
         hotel_id: Number(hotel.id),

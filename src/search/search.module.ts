@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +9,7 @@ import { Hotel } from 'src/hotels/entities/hotel.entity';
 import { RoomType } from 'src/room-types/entities/room-type.entity';
 import { Inventory } from 'src/inventories/entities/inventory.entity';
 import { RatePlan } from 'src/rate-plans/entities/rate-plan.entity';
+import { HotelsModule } from 'src/hotels/hotels.module';
 
 @Module({
   imports: [
@@ -19,8 +20,9 @@ import { RatePlan } from 'src/rate-plans/entities/rate-plan.entity';
       Hotel,
       RoomType,
       Inventory,
-      RatePlan
+      RatePlan,
     ]),
+    HotelsModule
   ],
   controllers: [SearchController],
   providers: [SearchService],
