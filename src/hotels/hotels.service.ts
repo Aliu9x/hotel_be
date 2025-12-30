@@ -17,7 +17,7 @@ import { Ward } from 'src/locations/entities/ward.entity';
 import { IUser } from 'src/interfaces/customize.interface';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HotelImage } from './entities/hotel-image.entity';
+import { HotelImage, ImageStatus } from './entities/hotel-image.entity';
 import { ListHotelsDto } from './dto/list-hotels.dto';
 
 @Injectable()
@@ -40,6 +40,20 @@ export class HotelsService {
     });
     if (!row) return null;
     return String(row.id);
+  }
+
+  async getHotelOrThrowById(id: string) {
+    const hotel = await this.hotelRepo.findOne({ where: { id: String(id) } });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+    return hotel;
+  }
+
+  async getCurrentUsersHotelOrThrow(user: IUser) {
+    const hid = await this.hotelRepo.findOne({
+      where: { id: user.hotel_id, created_by_user_id: user.id },
+    });
+    if (!hid) throw new BadRequestException('Tài khoản chưa có khách sạn');
+    return hid;
   }
   async createHotel(dto: CreateHotelDto, user: IUser) {
     if (!/^[0-9]+$/.test(dto.registration_code)) {
@@ -104,23 +118,8 @@ export class HotelsService {
 
     return saved;
   }
-
-  async getHotelOrThrowById(id: string) {
-    const hotel = await this.hotelRepo.findOne({ where: { id: String(id) } });
-    if (!hotel) throw new NotFoundException('Hotel not found');
-    return hotel;
-  }
-
-  async getCurrentUsersHotelOrThrow(user: IUser) {
-    const hid = await this.hotelRepo.findOne({
-      where: { id: user.hotel_id, created_by_user_id: user.id },
-    });
-    if (!hid) throw new BadRequestException('Tài khoản chưa có khách sạn');
-    return hid;
-  }
-
-  async updateMyHotelContract(dto: UpdateContractDto, user: IUser) {
-    const idNum = Number(user?.hotel_id);
+  async updateMyHotelContract(dto: UpdateContractDto) {
+    const idNum = Number(dto?.id_hotel);
 
     if (!idNum || Number.isNaN(idNum)) {
       throw new BadRequestException(
@@ -153,7 +152,7 @@ export class HotelsService {
   }
 
   async saveMyHotelContractFiles(
-    user: IUser,
+    id: string,
     pdfFile?: Express.Multer.File,
     identityImage?: Express.Multer.File,
   ) {
@@ -161,7 +160,7 @@ export class HotelsService {
       throw new BadRequestException('Thiếu file upload');
     }
 
-    const idNum = Number(user?.hotel_id);
+    const idNum = Number(id);
 
     if (!idNum || Number.isNaN(idNum)) {
       throw new BadRequestException(
@@ -210,14 +209,22 @@ export class HotelsService {
   async loadImagesFileNames(
     user: IUser,
   ): Promise<{ thumbnail: string | null; slider: string[] }> {
+    if (user.hotel_id === null) {
+      throw new BadRequestException('khong cos tk ks ');
+    }
+    const hotelId = Number(user.hotel_id);
+    if (!hotelId || Number.isNaN(hotelId)) {
+      throw new BadRequestException('hotel_id không hợp lệ');
+    }
     const hotel = await this.hotelRepo.findOne({
       where: { id: user.hotel_id },
     });
+
     if (!hotel) {
       throw new NotFoundException('Hotel not found for current user');
     }
     const rows = await this.hotelImage.find({
-      where: { hotel_id: user.hotel_id },
+      where: { hotel_id: user.hotel_id, status: ImageStatus.APPROVED },
       order: { id: 'ASC' },
     });
     if (rows.length === 0) {
@@ -235,26 +242,25 @@ export class HotelsService {
   }
 
   async loadImageByHotel(id: string) {
-  const hotel = await this.hotelRepo.findOne({
-    where: { id },
-  });
+    const hotel = await this.hotelRepo.findOne({
+      where: { id },
+    });
 
-  if (!hotel) {
-    throw new NotFoundException('No hotel');
+    if (!hotel) {
+      throw new NotFoundException('No hotel');
+    }
+
+    const images = await this.hotelImage.find({
+      where: { hotel_id: id, status: ImageStatus.APPROVED },
+      select: ['file_name'],
+      order: {
+        is_cover: 'DESC',
+        created_at: 'ASC',
+      },
+    });
+
+    return images.map((i) => i.file_name);
   }
-
-  const images = await this.hotelImage.find({
-    where: { hotel_id: id },
-    select: ['file_name'],        
-    order: {
-      is_cover: 'DESC',             
-      created_at: 'ASC',            
-    },
-  });
-
-  return images.map(i => i.file_name);
-}
-
 
   async list(
     params: ListHotelsDto,

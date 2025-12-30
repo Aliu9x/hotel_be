@@ -10,5 +10,6 @@ import { RoomType } from 'src/room-types/entities/room-type.entity';
   imports: [TypeOrmModule.forFeature([AmenityMapping, Amenity, RoomType])],
   controllers: [AmenityMappingsController],
   providers: [AmenityMappingsService],
+  exports: [AmenityMappingsService], 
 })
 export class AmenityMappingsModule {}

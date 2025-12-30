@@ -11,19 +11,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-export enum MealPlanType {
-  NONE = 'NONE',
-  BREAKFAST = 'BREAKFAST',
-  HALF_BOARD = 'HALF_BOARD',
-  FULL_BOARD = 'FULL_BOARD',
-}
-
-export enum RatePlanType {
-  REFUNDABLE = 'REFUNDABLE',
-  NON_REFUNDABLE = 'NON_REFUNDABLE',
-  SEMI_FLEX = 'SEMI_FLEX',
-}
-
 @Entity('rate_plans')
 @Index('idx_rate_plans_hotel_room_type', ['hotel_id', 'room_type_id'])
 export class RatePlan {
@@ -36,29 +23,17 @@ export class RatePlan {
   @Column({ type: 'bigint', name: 'room_type_id' })
   room_type_id: string;
 
+  @Column({ name: 'rate_plan_category_id' })
+  rate_plan_category_id: string;
+
   @Column({ type: 'varchar', length: 160 })
   name: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'price_amount' })
-  price_amount: string; 
+  price_amount: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
-
-  @Column({
-    type: 'enum',
-    enum: MealPlanType,
-    name: 'meal_plan',
-    nullable: true,
-  })
-  meal_plan?: MealPlanType;
-
-  @Column({
-    type: 'enum',
-    enum: RatePlanType,
-    name: 'type',
-  })
-  type: RatePlanType;
 
   @Column({ type: 'int', name: 'base_occupancy', default: 2 })
   base_occupancy: number;

@@ -1,24 +1,32 @@
-import { IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Role } from 'src/interfaces/customize.interface';
-
+import { UserStatus } from '../entities/user.entity';
 
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
-  @MaxLength(255)
+  @MinLength(2)
   full_name?: string;
 
   @IsOptional()
   @IsEmail()
-  @MaxLength(255)
   email?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
   phone?: string;
 
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
 }

@@ -3,6 +3,9 @@ import { HotelApprovalStatus } from '../entities/hotel.entity';
 
 export class UpdateContractDto {
   @IsString()
+  id_hotel!: string;
+
+  @IsString()
   legal_name!: string;
 
   @IsString()

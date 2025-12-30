@@ -14,6 +14,8 @@ import { Hotel } from 'src/hotels/entities/hotel.entity';
 import { Inventory } from 'src/inventories/entities/inventory.entity';
 import { RoomType } from './entities/room-type.entity';
 import { log } from 'console';
+import { ImageStatus } from 'src/hotels/entities/hotel-image.entity';
+import { RoomTypeCategory } from 'src/room-type-category/entities/room-type-category.entity';
 
 @Injectable()
 export class RoomTypesService {
@@ -26,6 +28,8 @@ export class RoomTypesService {
     private readonly repoHt: Repository<Hotel>,
     @InjectRepository(Inventory)
     private readonly repoInventory: Repository<Inventory>,
+    @InjectRepository(RoomTypeCategory)
+    private readonly repoRoomTypeCategory: Repository<RoomTypeCategory>,
   ) {}
 
   async loadImagesFileNames(
@@ -45,7 +49,7 @@ export class RoomTypesService {
       );
     }
     const rows = await this.repoRt.find({
-      where: { room_type_id: roomTypeId },
+      where: { room_type_id: roomTypeId, status: ImageStatus.APPROVED },
       order: { id: 'ASC' },
     });
     if (rows.length === 0) {
@@ -63,14 +67,20 @@ export class RoomTypesService {
   }
 
   async create(dto: CreateRoomTypeDto, user: IUser) {
+    const nameRoomType = await this.repoRoomTypeCategory.findOne({
+      where: { id: dto.id_category },
+    });
+    const maxAdults = dto.max_adults ?? 0;
+    const maxChildren = dto.max_children ?? 0;
     const entity = this.repo.create({
       hotel_id: user.hotel_id,
-      name: dto.name,
+      room_type_category: dto.id_category,
+      name: nameRoomType.name,
       description: dto.description ?? null,
       total_rooms: dto.total_rooms ?? null,
       max_adults: dto.max_adults,
       max_children: dto.max_children ?? 0,
-      max_occupancy: dto.max_occupancy,
+      max_occupancy: maxAdults + maxChildren,
       bed_config: dto.bed_config ?? null,
       room_size_label: dto.room_size_label ?? null,
       floor_level: dto.floor_level ?? null,
@@ -87,7 +97,6 @@ export class RoomTypesService {
     for (let i = 0; i < 60; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-
       inventories.push({
         hotelId: user.hotel_id,
         roomTypeId: saved.id,
@@ -99,9 +108,7 @@ export class RoomTypesService {
         stopSell: false,
       });
     }
-
     await this.repoInventory.insert(inventories);
-
     return JSON.parse(
       JSON.stringify({
         ...saved,
@@ -199,16 +206,24 @@ export class RoomTypesService {
       throw new NotFoundException(`Không tìm thấy loại phòng ID=${id}`);
     }
 
+    const maxAdults = dto.max_adults ?? roomType.max_adults ?? 0;
+    const maxChildren = dto.max_children ?? roomType.max_children ?? 0;
+
     if (user.hotel_id !== undefined) roomType.hotel_id = user.hotel_id;
-    if (dto.name !== undefined) roomType.name = dto.name;
+
+    if (dto.id_category !== undefined) {
+      const nameRoomType = await this.repoRoomTypeCategory.findOne({
+        where: { id: dto.id_category },
+      });
+      roomType.room_type_category = dto.id_category;
+      roomType.name = nameRoomType.name;
+    }
     if (dto.description !== undefined)
       roomType.description = dto.description ?? null;
     if (dto.total_rooms !== undefined) roomType.total_rooms = dto.total_rooms;
     if (dto.max_adults !== undefined) roomType.max_adults = dto.max_adults;
     if (dto.max_children !== undefined)
       roomType.max_children = dto.max_children;
-    if (dto.max_occupancy !== undefined)
-      roomType.max_occupancy = dto.max_occupancy;
     if (dto.bed_config !== undefined)
       roomType.bed_config = dto.bed_config ?? null;
     if (dto.room_size_label !== undefined)
@@ -219,10 +234,26 @@ export class RoomTypesService {
       roomType.smoking_allowed = dto.smoking_allowed;
     if (dto.view !== undefined) roomType.view = dto.view ?? null;
     if (dto.is_active !== undefined) roomType.is_active = dto.is_active;
-
+    roomType.max_occupancy = maxAdults + maxChildren;
     roomType.updated_at = new Date();
+    const saved = await this.repo.save(roomType);
+    if (dto.total_rooms !== undefined) {
+      const inventories = await this.repoInventory.find({
+        where: {
+          roomTypeId: saved.id,
+        },
+      });
+      for (const inv of inventories) {
+        inv.totalRooms = dto.total_rooms;
 
-    return await this.repo.save(roomType);
+        const recalculatedAvailable =
+          dto.total_rooms - inv.roomsSold - inv.blockedRooms;
+
+        inv.availableRooms = Math.max(0, recalculatedAvailable);
+      }
+      await this.repoInventory.save(inventories);
+    }
+    return saved;
   }
 
   async removeHard(id: string): Promise<void> {

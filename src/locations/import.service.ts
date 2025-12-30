@@ -31,7 +31,6 @@ export class ImportService {
     @InjectRepository(Ward) private readonly wardRepo: Repository<Ward>,
   ) {}
 
-  /* ---------------- Common Helpers ---------------- */
 
   private readSheet(buf: Buffer): Row[] {
     try {

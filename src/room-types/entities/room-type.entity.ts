@@ -18,6 +18,9 @@ export class RoomType {
   @Column({ type: 'bigint' })
   hotel_id: string;
 
+  @Column()
+  room_type_category: string | null;
+
   @Column({ type: 'varchar', length: 150 })
   name: string;
 

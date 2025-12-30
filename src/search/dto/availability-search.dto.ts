@@ -12,6 +12,7 @@ import {
   IsNumber,
   ArrayUnique,
 } from 'class-validator';
+import { HotelPolicy } from 'src/hotel-policies/entities/hotel-policy.entity';
 
 export enum DestinationType {
   HOTEL = 'hotel',
@@ -63,14 +64,10 @@ export class AvailabilitySearchDto {
   wardId?: number;
 
   @IsOptional()
-  @IsArray()
-  @ArrayUnique()
   @Type(() => Number)
   hotelAmenityIds?: number[];
 
   @IsOptional()
-  @IsArray()
-  @ArrayUnique()
   @Type(() => Number)
   roomAmenityIds?: number[];
 
@@ -113,18 +110,15 @@ export interface RoomTypeAvailability {
   room_type_id: number;
   name: string;
   description?: string;
-  capacity: {
-    max_adults: number;
-    max_children: number;
-    max_occupancy: number;
-  };
+
+  max_occupancy: number;
+
   bed_config: string;
   room_size_label?: string;
   floor_level: string;
   smoking_allowed: boolean;
   view: string;
   total_rooms: number;
-  can_fulfill: boolean;
   avg_price?: number;
   best_price?: number;
 }
@@ -140,6 +134,8 @@ export interface HotelAvailability {
   hotel_min_price?: number;
   matched_room_types: RoomTypeAvailability[];
   images: string[];
+  hotelPolicies: HotelPolicy;
+  amenity:any
 }
 
 export interface AvailabilityResponse {

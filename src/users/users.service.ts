@@ -1,7 +1,9 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto, RegisterUserDTo } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
@@ -12,16 +14,14 @@ import { compareSync } from 'bcryptjs';
 import { IUser, Role } from 'src/interfaces/customize.interface';
 import { HotelMember } from 'src/hotel-members/entities/hotel-member.entity';
 import { ListUsersDto } from './dto/list-users.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
-    @InjectRepository(HotelMember)
-    private hotelMemberRepo: Repository<HotelMember>,
   ) {}
-
 
   async create(dto: CreateUserDto): Promise<User> {
     const saltRounds = 10;
@@ -42,6 +42,31 @@ export class UsersService {
     return saved;
   }
 
+  async update(id: string, dto: UpdateUserDto): Promise<User> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Không tìm thấy người dùng');
+
+    if (dto.email && dto.email !== user.email) {
+      const existingEmail = await this.userRepo.findOne({
+        where: { email: dto.email },
+      });
+      if (existingEmail) throw new ConflictException('Email đã tồn tại');
+    }
+    // if (dto.phone && dto.phone !== user.phone) {
+    //   const existingPhone = await this.userRepo.findOne({ where: { phone: dto.phone } });
+    //   if (existingPhone) throw new ConflictException('Số điện thoại đã tồn tại');
+    // }
+
+    if (dto.full_name != null) user.full_name = dto.full_name;
+    if (dto.email != null) user.email = dto.email ?? null;
+    if (dto.phone != null) user.phone = dto.phone ?? null;
+    if (dto.role != null) user.role = dto.role;
+    if (dto.status != null) user.status = dto.status;
+
+    const saved = await this.userRepo.save(user);
+    return saved;
+  }
+
   async list(params: ListUsersDto): Promise<{
     result: Omit<User, 'password'>[];
     total: number;
@@ -58,6 +83,7 @@ export class UsersService {
         'u.email',
         'u.phone',
         'u.role',
+        'u.status',
         'u.signup_method',
         'u.created_at',
         'u.updatedAt',

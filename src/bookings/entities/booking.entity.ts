@@ -1,14 +1,27 @@
+import { Hotel } from 'src/hotels/entities/hotel.entity';
+import { RatePlan } from 'src/rate-plans/entities/rate-plan.entity';
+import { RoomType } from 'src/room-types/entities/room-type.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
+  Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
-export type BookingStatus ='HOLD' | 'CANCELLED' | 'EXPIRED' | 'PAID';
-
+export type BookingStatus =
+  | 'HOLD'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'PAID'
+  | 'CONFIRMED';
+export enum PaymentType {
+  PREPAID = 'PREPAID',
+  PAY_AT_HOTEL = 'PAY_AT_HOTEL',
+}
 @Entity('bookings')
 @Index(['hotel_id', 'room_type_id', 'rate_plan_id'])
 export class Booking {
@@ -33,6 +46,9 @@ export class Booking {
   @Column({ type: 'int' })
   nights: number;
 
+  @Column({ type: 'int', default: null })
+  user_id: number;
+
   @Column({ type: 'int' })
   adults: number;
 
@@ -43,21 +59,15 @@ export class Booking {
   rooms: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  price_per_night: number;
+  total_price: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  total_room_price: number;
+  @Column({
+    type: 'enum',
+    enum: PaymentType,
+    nullable: true,
+  })
+  payment_type?: PaymentType;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  tax_amount: number;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  grand_total: number;
-
-  @Column({ type: 'tinyint', default: 0 })
-  prepay_required: number;
-
-  
   @Column({ length: 50, nullable: true })
   promo_tag?: string;
 
@@ -79,15 +89,14 @@ export class Booking {
   @Column({ type: 'text', nullable: true })
   special_requests?: string;
 
-  
   @Column({ length: 40, nullable: true })
   reservation_code?: string;
 
   @Column({ type: 'timestamp', nullable: true })
   hold_expires_at?: Date;
 
-  @Column({ length: 30, nullable: true })
-  payment_method?: string; 
+  @Column({ type: 'datetime', nullable: true })
+  payment_expired_at?: Date;
 
   @Column({ length: 20 })
   status: BookingStatus;
@@ -97,4 +106,5 @@ export class Booking {
 
   @UpdateDateColumn()
   updated_at: Date;
+
 }

@@ -81,4 +81,36 @@ export class AmenityMappingsService {
 
     return groups;
   }
+  async getMappingsGroupedHotel(id: string): Promise<AmenityGroup[]> {
+
+    const rows = await this.mappingRepo.find({
+      where: { hotel_id: id },
+      relations: ['amenity', 'amenity.category'],
+    });
+
+    const groupsMap = new Map<string, AmenityGroup>();
+    for (const r of rows) {
+      const cat = r?.amenity?.category;
+      const catId = cat?.id as string;
+      const catName = (cat?.name_category ?? cat?.name_category) as string;
+
+      if (!groupsMap.has(catId)) {
+        groupsMap.set(catId, {
+          category_id: cat?.id ?? null,
+          category_name: catName,
+          amenities: [],
+        });
+      }
+
+      groupsMap.get(catId)!.amenities.push({
+        mapping_id: r.id,
+        amenity_id: r.amenity_id,
+        name: r.amenity?.name ?? '',
+      });
+    }
+
+    const groups = Array.from(groupsMap.values());
+
+    return groups;
+  }
 }

@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './core/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MulterExceptionFilter } from './files/multer.exception.filter';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -16,7 +17,6 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
   app.useGlobalFilters(new MulterExceptionFilter());
-
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
   app.setViewEngine('ejs');

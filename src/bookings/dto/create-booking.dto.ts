@@ -1,4 +1,5 @@
-import { IsDateString, IsEmail, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { PaymentType } from '../entities/booking.entity';
 
 export class CreateBookingDto {
   @IsInt() hotelId!: number;
@@ -23,9 +24,8 @@ export class CreateBookingDto {
   specialRequests?: string[]; 
 
 
-  @IsInt() @Min(0) pricePerNight!: number; 
+  @IsInt() @Min(0) total_price!: number; 
   @IsOptional() promoTag?: string;
-  @IsInt() @Min(0) prepayRequired!: number; 
 }
 
 export class ReserveBookingDto {
@@ -47,3 +47,12 @@ export interface BookingResponse {
   status: string;
   expiresAt?: string;
 }
+
+export class UpdatePaymentTypeDto {
+  @IsString()
+  bookingId: string;
+
+  @IsEnum(PaymentType)
+  paymentType: PaymentType;
+}
+

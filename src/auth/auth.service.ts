@@ -30,7 +30,7 @@ export class AuthService {
   async login(user: IUser, response: Response) {
     const { id, email, role } = user;
     let hotel_id: string | null = null;
-
+    
     if (role === Role.HOTEL_OWNER) {
       hotel_id = await this.hotelsService.findHotelIdByOwner(id);
     }

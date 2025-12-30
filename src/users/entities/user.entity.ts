@@ -20,6 +20,10 @@ export enum SignupMethod {
   SELF = 'SELF',
   ADMIN_CREATED = 'ADMIN_CREATED',
 }
+export enum UserStatus {
+  APPROVED = 'APPROVED',
+  SUSPENDED = 'SUSPENDED',
+}
 
 @Entity('users')
 @Index('uq_users_email', ['email'], { unique: true })
@@ -49,6 +53,8 @@ export class User {
   })
   signup_method: SignupMethod;
 
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.APPROVED })
+  status: UserStatus;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at: Date;

@@ -74,15 +74,15 @@ export class HotelPoliciesService {
     }
   }
 
-  async findOne( user: IUser,hotelId?: string,): Promise<HotelPolicy> {
+  async findOne(user: IUser | null, hotelId?: string): Promise<HotelPolicy> {
     const targetHotelId =
-      user.role === Role.HOTEL_OWNER ? user.hotel_id : hotelId;
+      user?.role === Role.HOTEL_OWNER ? user.hotel_id : hotelId;
 
     if (!targetHotelId) {
       throw new BadRequestException('Thiếu hotelId để lấy chính sách.');
     }
 
-    if (user.role === Role.HOTEL_OWNER && user.hotel_id !== targetHotelId) {
+    if (user?.role === Role.HOTEL_OWNER && user.hotel_id !== targetHotelId) {
       throw new ForbiddenException(
         'Không có quyền truy cập chính sách khách sạn này.',
       );
@@ -93,11 +93,8 @@ export class HotelPoliciesService {
     });
 
     if (!policy) {
-      throw new NotFoundException(
-        'Chưa thiết lập chính sách cho khách sạn này.',
-      );
+      return;
     }
-
     return policy;
   }
 }

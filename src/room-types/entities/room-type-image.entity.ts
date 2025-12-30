@@ -1,3 +1,4 @@
+import { ImageStatus } from 'src/hotels/entities/hotel-image.entity';
 import {
   Column,
   CreateDateColumn,
@@ -13,6 +14,13 @@ export class RoomTypeImage {
 
   @Column({ type: 'bigint' })
   hotel_id!: string;
+
+  @Column({
+    type: 'enum',
+    enum: ImageStatus,
+    default: ImageStatus.PENDING_AI,
+  })
+  status: ImageStatus;
 
   @Column({ type: 'bigint' })
   room_type_id!: string;

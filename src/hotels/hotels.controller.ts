@@ -21,7 +21,7 @@ import {
 } from './dto/update-contract.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { User } from 'src/decorator/customize';
+import { Public, User } from 'src/decorator/customize';
 import { IUser } from 'src/interfaces/customize.interface';
 import { ListHotelsDto } from './dto/list-hotels.dto';
 
@@ -43,8 +43,8 @@ export class HotelsController {
   }
 
   @Put('contract')
-  async updateContract(@Body() dto: UpdateContractDto, @User() user: IUser) {
-    return await this.service.updateMyHotelContract(dto, user);
+  async updateContract(@Body() dto: UpdateContractDto) {
+    return await this.service.updateMyHotelContract(dto);
   }
 
   @Post('contract/files')
@@ -60,24 +60,27 @@ export class HotelsController {
       contract_pdf?: Express.Multer.File[];
       identity_doc?: Express.Multer.File[];
     },
-    @User() user: IUser,
+
+    @Body('id_hotel') id: string, 
   ) {
+    console.log('id_hotel nhận được:', id);
+
     const pdfFile = files.contract_pdf?.[0];
     const identityImage = files.identity_doc?.[0];
+
     if (!pdfFile && !identityImage) {
       throw new BadRequestException('Thiếu file upload');
     }
-    return await this.service.saveMyHotelContractFiles(
-      user,
-      pdfFile,
-      identityImage,
-    );
+
+    return this.service.saveMyHotelContractFiles(id, pdfFile, identityImage);
   }
+
   @Get('load-images')
   loadImage(@User() user) {
     return this.service.loadImagesFileNames(user);
   }
 
+  @Public()
   @Get('images/:id')
   loadImageByHotel(@Param('id', ParseIntPipe) id: string) {
     return this.service.loadImageByHotel(id);

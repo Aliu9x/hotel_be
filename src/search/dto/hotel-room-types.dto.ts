@@ -2,12 +2,12 @@ import { IsDateString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class HotelRoomTypesQueryDto {
-  @IsInt() @Type(()=>Number) hotelId!: number;
+  @IsInt() @Type(() => Number) hotelId!: number;
   @IsDateString() checkin!: string;
   @IsDateString() checkout!: string;
-  @IsInt() @Type(()=>Number) @Min(1) adults!: number;
-  @IsInt() @Type(()=>Number) @Min(0) children!: number;
-  @IsInt() @Type(()=>Number) @Min(1) rooms!: number;
+  @IsInt() @Type(() => Number) @Min(1) adults!: number;
+  @IsInt() @Type(() => Number) @Min(0) children!: number;
+  @IsInt() @Type(() => Number) @Min(1) rooms!: number;
 }
 
 export interface HotelRoomTypeDaily {
@@ -24,20 +24,10 @@ export interface RatePlanPrice {
   rate_plan_id: number;
   name: string;
   description?: string;
-  meal_plan?: string;
-  type?: string;
-  base_occupancy: number;
-  max_occupancy: number;
-  extra_adult_fee: number;
-  extra_child_fee: number;
   prepayment_required: boolean;
   price_amount: number;
-  extra_adults: number;
-  extra_children: number;
-  nightly_total: number;  
-  stay_total: number;    
-  available_for_request: boolean;
-  refundable: boolean;
+  nightly_total: number;
+  stay_total: number;
 }
 
 export interface HotelRoomTypeAvailability {
@@ -58,7 +48,7 @@ export interface HotelRoomTypeAvailability {
   total_rooms_reference: number;
   daily: HotelRoomTypeDaily[];
   avg_price?: number;
-  rate_plans: RatePlanPrice[]; 
+  rate_plans: RatePlanPrice[];
 }
 
 export interface HotelRoomTypesResponse {
@@ -80,6 +70,7 @@ export interface HotelRoomTypesResponse {
     province?: string;
     district?: string;
     ward?: string;
+    description: string;
   };
   room_types: HotelRoomTypeAvailability[];
 }

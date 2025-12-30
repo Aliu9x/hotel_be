@@ -13,13 +13,14 @@ import { UsersService } from './users.service';
 import { ApiTags } from '@nestjs/swagger';
 import { ListUsersDto } from './dto/list-users.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-   @Post()
+  @Post()
   async create(@Body() dto: CreateUserDto) {
     const exists = await this.usersService.findOneByUsername(dto.email);
     if (exists) {
@@ -30,7 +31,7 @@ export class UsersController {
     return { result: safe };
   }
 
-    @Get()
+  @Get()
   async list(@Query() query: ListUsersDto) {
     const { result, total, page, limit } = await this.usersService.list(query);
     return {
@@ -43,4 +44,8 @@ export class UsersController {
     };
   }
 
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
+  }
 }

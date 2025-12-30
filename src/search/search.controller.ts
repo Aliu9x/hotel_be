@@ -22,10 +22,10 @@ export class SearchController {
     const data = await this.service.search(query);
     return data;
   }
-  @Get('hotel-room-types')
-  @Public()
-  async list(@Query() query: HotelRoomTypesQueryDto) {
-    const data = await this.service.getRoomTypesAvailability(query);
-    return data;
-  }
+  // @Get('hotel-room-types')
+  // @Public()
+  // async list(@Query() query: HotelRoomTypesQueryDto) {
+  //   const data = await this.service.getRoomTypesAvailability(query);
+  //   return data;
+  // }
 }

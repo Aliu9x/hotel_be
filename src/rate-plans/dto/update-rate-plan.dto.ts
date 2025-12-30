@@ -8,7 +8,6 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { MealPlanType, RatePlanType } from '../entities/rate-plan.entity';
 
 export class UpdateRatePlanDto {
   @ApiPropertyOptional()
@@ -16,10 +15,8 @@ export class UpdateRatePlanDto {
   @IsString()
   room_type_id?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
   @IsString()
-  name?: string;
+  rate_plan_category_id: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -30,16 +27,6 @@ export class UpdateRatePlanDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @ApiPropertyOptional({ enum: MealPlanType })
-  @IsOptional()
-  @IsEnum(MealPlanType)
-  meal_plan?: MealPlanType;
-
-  @ApiPropertyOptional({ enum: RatePlanType })
-  @IsOptional()
-  @IsEnum(RatePlanType)
-  type?: RatePlanType;
 
   @ApiPropertyOptional()
   @IsOptional()

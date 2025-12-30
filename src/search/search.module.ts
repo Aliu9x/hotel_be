@@ -10,6 +10,8 @@ import { RoomType } from 'src/room-types/entities/room-type.entity';
 import { Inventory } from 'src/inventories/entities/inventory.entity';
 import { RatePlan } from 'src/rate-plans/entities/rate-plan.entity';
 import { HotelsModule } from 'src/hotels/hotels.module';
+import { HotelPoliciesModule } from 'src/hotel-policies/hotel-policies.module';
+import { AmenityMappingsModule } from 'src/amenity-mappings/amenity-mappings.module';
 
 @Module({
   imports: [
@@ -22,7 +24,9 @@ import { HotelsModule } from 'src/hotels/hotels.module';
       Inventory,
       RatePlan,
     ]),
-    HotelsModule
+    HotelsModule,
+    HotelPoliciesModule,
+    AmenityMappingsModule, // 👈 import nguyên module
   ],
   controllers: [SearchController],
   providers: [SearchService],

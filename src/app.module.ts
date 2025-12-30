@@ -27,6 +27,9 @@ import { CronModule } from './cron/cron.module';
 import { SearchModule } from './search/search.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { PaymentModule } from './payment/payment.module';
+import { AiModerationModule } from './ai-moderation/ai-moderation.module';
+import { RoomTypeCategoryModule } from './room-type-category/room-type-category.module';
+import { RatePlanCategoryModule } from './rate-plan-category/rate-plan-category.module';
 
 @Module({
   imports: [
@@ -69,6 +72,9 @@ import { PaymentModule } from './payment/payment.module';
     SearchModule,
     BookingsModule,
     PaymentModule,
+    AiModerationModule,
+    RoomTypeCategoryModule,
+    RatePlanCategoryModule,
   ],
   controllers: [AppController],
   providers: [

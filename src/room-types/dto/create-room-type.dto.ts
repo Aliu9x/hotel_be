@@ -11,12 +11,11 @@ import {
   Min,
 } from 'class-validator';
 
-
 export class CreateRoomTypeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  name: string;
+  id_category: string;
 
   @IsOptional()
   @IsString()
@@ -38,11 +37,6 @@ export class CreateRoomTypeDto {
   @IsInt()
   @Min(0)
   max_children?: number = 0;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  max_occupancy: number;
 
   @IsOptional()
   @IsString()
@@ -71,5 +65,4 @@ export class CreateRoomTypeDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean = true;
-
 }

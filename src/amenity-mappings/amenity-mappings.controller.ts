@@ -12,7 +12,12 @@ export class AmenityMappingsController {
   createOrUpdate(@Body() dto: CreateAmenityMappingDto, @User() user) {
     return this.service.createOrUpdate(dto, user);
   }
-
+  @Post('hotel')
+  @Public()
+  @ResponseMessage('Danh sách tiện ích được chọn')
+  getMappingsHotel(@Body('id') id: string) {
+    return this.service.getMappingsGroupedHotel(id);
+  }
   @Get()
   @ResponseMessage('Danh sách tiện ích được chọn')
   getMappings(@Query('room_type_id') room_type_id?: string, @User() user?) {

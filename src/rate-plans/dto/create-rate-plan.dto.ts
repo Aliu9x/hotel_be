@@ -9,7 +9,6 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { MealPlanType, RatePlanType } from '../entities/rate-plan.entity';
 
 export class CreateRatePlanDto {
   @ApiProperty({ description: 'Room Type ID', example: '10' })
@@ -17,10 +16,9 @@ export class CreateRatePlanDto {
   @IsNotEmpty()
   room_type_id: string;
 
-  @ApiProperty({ example: 'Flexible' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  rate_plan_category_id: string;
 
   @ApiProperty({ example: '1200000.00' })
   @IsString()
@@ -31,15 +29,6 @@ export class CreateRatePlanDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @ApiPropertyOptional({ enum: MealPlanType, example: MealPlanType.BREAKFAST })
-  @IsOptional()
-  @IsEnum(MealPlanType)
-  meal_plan?: MealPlanType;
-
-  @ApiProperty({ enum: RatePlanType, example: RatePlanType.REFUNDABLE })
-  @IsEnum(RatePlanType)
-  type: RatePlanType;
 
   @ApiProperty({ example: 2, default: 2 })
   @IsInt()
