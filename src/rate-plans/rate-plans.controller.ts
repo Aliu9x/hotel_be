@@ -7,13 +7,12 @@ import { IUser } from 'src/interfaces/customize.interface';
 import { User } from 'src/decorator/customize';
 import { CreateRatePlanDto } from './dto/create-rate-plan.dto';
 
-@ApiTags('Rate Plans')
+
 @Controller('rate-plans')
 export class RatePlanController {
   constructor(private readonly service: RatePlanService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Danh sách rate plan của khách sạn của user (search theo tên & room_type_id)' })
   list(
     @Query(new ValidationPipe({ transform: true })) query: ListRatePlansDto,
     @User() user: IUser,
@@ -22,9 +21,8 @@ export class RatePlanController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Chi tiết 1 rate plan thuộc hotel của user' })
-  detail(@Param('id') id: string, @User() user: IUser) {
-    return this.service.findOne(id, user);
+  detail(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 
   @Post()

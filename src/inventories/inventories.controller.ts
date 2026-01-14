@@ -18,18 +18,29 @@ import { User } from 'src/decorator/customize';
 export class InventoriesController {
   constructor(private readonly inventoryService: InventoriesService) {}
 
-  @Get()
-  async getInventories(
-    @User() user,
-    @Query('roomTypeId') roomTypeId: string,
-    @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string,
-  ) {
-    return this.inventoryService.getByRoomType(
-      user,
+  /**
+   * Hủy đặt phòng trong khoảng ngày (cancelBookingRange)
+   * POST /inventory/cancel-range
+   * Body: { hotelId, roomTypeId, checkInDate, checkOutDate, quantity }
+   */
+  @Post('cancel-range')
+  async cancelBookingRange(@Body() body: {
+    hotelId: string;
+    roomTypeId: string;
+    checkInDate: string; // YYYY-MM-DD
+    checkOutDate: string; // YYYY-MM-DD
+    quantity: number;
+  }) {
+    const { hotelId, roomTypeId, checkInDate, checkOutDate, quantity } = body;
+    if (!hotelId || !roomTypeId || !checkInDate || !checkOutDate || !quantity) {
+      throw new BadRequestException('Thiếu tham số');
+    }
+    return this.inventoryService.cancelBookingRange(
+      hotelId,
       roomTypeId,
-      fromDate,
-      toDate,
+      checkInDate,
+      checkOutDate,
+      quantity,
     );
   }
 }

@@ -12,12 +12,15 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-export type BookingStatus =
-  | 'HOLD'
-  | 'CANCELLED'
-  | 'EXPIRED'
-  | 'PAID'
-  | 'CONFIRMED';
+export enum BookingStatus {
+  HOLD = 'HOLD',
+  CANCELLED = 'CANCELLED',
+  CONFIRMED = 'CONFIRMED', 
+  EXPIRED = 'EXPIRED',
+  PAID = 'PAID',
+  PAYMENT_PENDING = 'PAYMENT_PENDING',
+}
+
 export enum PaymentType {
   PREPAID = 'PREPAID',
   PAY_AT_HOTEL = 'PAY_AT_HOTEL',
@@ -71,34 +74,43 @@ export class Booking {
   @Column({ length: 50, nullable: true })
   promo_tag?: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, nullable: true })
   contact_name: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, nullable: true })
   contact_email: string;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, nullable: true })
   contact_phone: string;
 
   @Column({ type: 'tinyint', default: 1 })
   is_self_book: number;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, nullable: true })
   guest_name: string;
 
   @Column({ type: 'text', nullable: true })
   special_requests?: string;
 
+  @Column({ type: 'text', nullable: true })
+  cancel_reason?: string;
+  @Column({ type: 'timestamp', nullable: true })
+  hold_expires_at?: Date;
+
   @Column({ length: 40, nullable: true })
   reservation_code?: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  hold_expires_at?: Date;
+  canceled_at?: Date;
 
   @Column({ type: 'datetime', nullable: true })
   payment_expired_at?: Date;
 
-  @Column({ length: 20 })
+  @Column({
+    type: 'enum',
+    enum: BookingStatus,
+    default: BookingStatus.HOLD,
+  })
   status: BookingStatus;
 
   @CreateDateColumn()
@@ -106,5 +118,4 @@ export class Booking {
 
   @UpdateDateColumn()
   updated_at: Date;
-
 }

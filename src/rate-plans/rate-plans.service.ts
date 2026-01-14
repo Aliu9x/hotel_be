@@ -58,12 +58,9 @@ export class RatePlanService {
     };
   }
 
-  async findOne(id: string, user: IUser) {
+  async findOne(id: string) {
     const rp = await this.repo.findOne({ where: { id } });
     if (!rp) throw new NotFoundException('Rate plan not found');
-    if (!user.hotel_id) {
-      throw new ForbiddenException('User has no associated hotel');
-    }
     return rp;
   }
 

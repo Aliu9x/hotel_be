@@ -30,6 +30,7 @@ import { PaymentModule } from './payment/payment.module';
 import { AiModerationModule } from './ai-moderation/ai-moderation.module';
 import { RoomTypeCategoryModule } from './room-type-category/room-type-category.module';
 import { RatePlanCategoryModule } from './rate-plan-category/rate-plan-category.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { RatePlanCategoryModule } from './rate-plan-category/rate-plan-category.
     AiModerationModule,
     RoomTypeCategoryModule,
     RatePlanCategoryModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

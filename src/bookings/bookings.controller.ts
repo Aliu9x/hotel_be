@@ -11,6 +11,8 @@ import {
 import {
   CancelHoldDto,
   CreateBookingDto,
+  GetHotelDailyRevenueDto,
+  HoldBookingDto,
   ReserveBookingDto,
   UpdatePaymentMethodDto,
   UpdatePaymentTypeDto,
@@ -23,9 +25,14 @@ import { PaymentType } from './entities/booking.entity';
 export class BookingsController {
   constructor(private readonly service: BookingService) {}
 
-  @Post()
-  async create(@Body() dto: CreateBookingDto, @User() user) {
-    return this.service.create(dto, user);
+  @Patch(':id')
+  async create(@Body() dto: CreateBookingDto,@Param('id') id: string) {
+    return this.service.updateBooking(dto, id);
+  }
+
+  @Post('hold')
+  async holdBooking(@Body() dto: HoldBookingDto, @User() user) {
+    return this.service.holdBooking(dto, user);
   }
 
   @Post(':id/pay/momo')
@@ -45,21 +52,20 @@ export class BookingsController {
     return this.service.getMyBookings(user);
   }
 
-@Get('owner-bookings')
-async ownerBookings(
-  @User() user,
-  @Query('from') from?: string,
-  @Query('to') to?: string,
-  @Query('keyword') keyword?: string,
-) {
-  return this.service.getOwnerBookings(user, {
-    from,
-    to,
-    keyword,
-  });
-}
+  @Get('owner-bookings')
+  async ownerBookings(
+    @User() user,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    return this.service.getOwnerBookings(user, {
+      from,
+      to,
+      keyword,
+    });
+  }
 
-  
   @Patch(':id/cancel')
   async cancelBooking(@Param('id') id: string, @User() user) {
     return this.service.cancelBooking(id, user);

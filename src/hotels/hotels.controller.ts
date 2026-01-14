@@ -34,7 +34,7 @@ export class HotelsController {
     if (!/^[0-9]+$/.test(dto.registration_code)) {
       throw new BadRequestException('registration_code phải là số');
     }
-    return this.service.createHotel(dto, user);
+    return this.service.createOrUpdateHotel(dto, user);
   }
 
   @Get('me')
@@ -61,7 +61,7 @@ export class HotelsController {
       identity_doc?: Express.Multer.File[];
     },
 
-    @Body('id_hotel') id: string, 
+    @Body('id_hotel') id: string,
   ) {
     console.log('id_hotel nhận được:', id);
 
@@ -118,4 +118,6 @@ export class HotelsController {
     }
     return updated;
   }
+
+  
 }

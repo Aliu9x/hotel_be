@@ -55,69 +55,81 @@ export class HotelsService {
     if (!hid) throw new BadRequestException('Tài khoản chưa có khách sạn');
     return hid;
   }
-  async createHotel(dto: CreateHotelDto, user: IUser) {
-    if (!/^[0-9]+$/.test(dto.registration_code)) {
-      throw new BadRequestException('registration_code phải là số');
-    }
-    const existed = await this.hotelRepo.findOne({
-      select: ['id'],
-      where: { created_by_user_id: String(user.id) },
+async createOrUpdateHotel(dto: CreateHotelDto, user: IUser) {
+  if (!/^[0-9]+$/.test(dto.registration_code)) {
+    throw new BadRequestException('registration_code phải là số');
+  }
+
+  const existed = await this.hotelRepo.findOne({
+    where: { created_by_user_id: String(user.id) },
+  });
+
+  // ===== Lấy tên địa giới hành chính =====
+  let provinceName: string | undefined;
+  let districtName: string | undefined;
+  let wardName: string | undefined;
+
+  if (dto.province_id) {
+    const p = await this.provinceRepo.findOne({
+      where: { id: dto.province_id },
     });
-    if (existed) {
-      throw new ConflictException(
-        `Tài khoản đã tạo khách sạn (id=${existed.id}). Chỉ được tạo 1 khách sạn.`,
-      );
-    }
-    let provinceName: string | undefined;
-    let districtName: string | undefined;
-    let wardName: string | undefined;
+    if (!p) throw new BadRequestException('province_id không tồn tại');
+    provinceName = p.name;
+  }
 
-    if (dto.province_id) {
-      const p = await this.provinceRepo.findOne({
-        where: { id: dto.province_id },
-      });
-      if (!p) throw new BadRequestException('province_id không tồn tại');
-      provinceName = p.name;
-    }
-    if (dto.district_id) {
-      const d = await this.districtRepo.findOne({
-        where: { id: dto.district_id },
-      });
-      if (!d) throw new BadRequestException('district_id không tồn tại');
-      districtName = d.name;
-    }
-    if (dto.ward_id) {
-      const w = await this.wardRepo.findOne({ where: { id: dto.ward_id } });
-      if (!w) throw new BadRequestException('ward_id không tồn tại');
-      wardName = w.name;
-    }
+  if (dto.district_id) {
+    const d = await this.districtRepo.findOne({
+      where: { id: dto.district_id },
+    });
+    if (!d) throw new BadRequestException('district_id không tồn tại');
+    districtName = d.name;
+  }
 
-    const hotel = this.hotelRepo.create({
-      registration_code: dto.registration_code,
-      approval_status: dto.approval_status || 'PENDING',
-      name: dto.name,
-      description: dto.description,
-      star_rating: dto.star_rating,
-      address_line: dto.address_line,
-      province_id: dto.province_id,
-      district_id: dto.district_id,
-      ward_id: dto.ward_id,
-      contact_name: dto.contact_name,
-      contact_email: dto.contact_email,
-      contact_phone: dto.contact_phone,
-      province_name: provinceName,
-      district_name: districtName,
-      ward_name: wardName,
+  if (dto.ward_id) {
+    const w = await this.wardRepo.findOne({
+      where: { id: dto.ward_id },
+    });
+    if (!w) throw new BadRequestException('ward_id không tồn tại');
+    wardName = w.name;
+  }
+
+  // ===== DATA CHUNG =====
+  const payload = {
+    registration_code: dto.registration_code,
+    approval_status: dto.approval_status || 'PENDING',
+    name: dto.name,
+    description: dto.description,
+    star_rating: dto.star_rating,
+    address_line: dto.address_line,
+    province_id: dto.province_id,
+    district_id: dto.district_id,
+    ward_id: dto.ward_id,
+    province_name: provinceName,
+    district_name: districtName,
+    ward_name: wardName,
+    contact_name: dto.contact_name,
+    contact_email: dto.contact_email,
+    contact_phone: dto.contact_phone,
+  };
+
+  let hotel;
+
+  if (existed) {
+    // ===== UPDATE =====
+    await this.hotelRepo.update(existed.id, payload);
+    hotel = await this.hotelRepo.findOne({ where: { id: existed.id } });
+  } else {
+    // ===== CREATE =====
+    hotel = this.hotelRepo.create({
+      ...payload,
       created_by_user_id: String(user.id),
     });
-
-    const saved = await this.hotelRepo.save(hotel);
-
-    const dir = path.join(process.cwd(), 'public', 'images', 'contract');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-    return saved;
+    hotel = await this.hotelRepo.save(hotel);
   }
+
+  return hotel;
+}
+
   async updateMyHotelContract(dto: UpdateContractDto) {
     const idNum = Number(dto?.id_hotel);
 

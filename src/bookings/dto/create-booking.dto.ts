@@ -1,7 +1,15 @@
-import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { PaymentType } from '../entities/booking.entity';
 
-export class CreateBookingDto {
+export class HoldBookingDto {
   @IsInt() hotelId!: number;
   @IsInt() roomTypeId!: number;
   @IsInt() ratePlanId!: number;
@@ -13,19 +21,21 @@ export class CreateBookingDto {
   @IsInt() @Min(0) children!: number;
   @IsInt() @Min(1) rooms!: number;
 
+}
+export class CreateBookingDto {
   @IsString() contactName!: string;
   @IsEmail() contactEmail!: string;
   @IsString() contactPhone!: string;
-  @IsInt() @IsOptional() isSelfBook?: number; 
+  @IsInt() @IsOptional() isSelfBook?: number;
 
   @IsString() guestName!: string;
 
   @IsOptional()
-  specialRequests?: string[]; 
+  specialRequests?: string[];
 
-
-  @IsInt() @Min(0) total_price!: number; 
+  @IsInt() @Min(0) total_price!: number;
   @IsOptional() promoTag?: string;
+
 }
 
 export class ReserveBookingDto {
@@ -38,7 +48,7 @@ export class CancelHoldDto {
 
 export class UpdatePaymentMethodDto {
   @IsInt() bookingId!: number;
-  @IsString() paymentMethod!: string; 
+  @IsString() paymentMethod!: string;
 }
 
 export interface BookingResponse {
@@ -56,3 +66,8 @@ export class UpdatePaymentTypeDto {
   paymentType: PaymentType;
 }
 
+export class GetHotelDailyRevenueDto {
+  @IsOptional()
+  @IsString()
+  date?: string; // YYYY-MM-DD
+}
